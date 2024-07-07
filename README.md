@@ -2,15 +2,15 @@
 
 # 🗣️🔥 QP-TinySpeech
 
-🚀 Extremely Low-Bit Quantized + Pruned TinySpeech-Z for low-power MCUs 🚀
+*Extremely Low-Bit <ins>Quantized + Pruned</ins> TinySpeech-Z for low-power MCUs*
 
 </div>
 
 # Overview 
 
-This repository contains (Iterative Pruning & QA-Training) scripts implementing the attention condenser block based architecture, aimed at offsetting the computational cost of self-attention networks. Moreover, it contains inference scripts designed to run on the VSDSquadron-Mini board, carrying the CH32V003 micro-controller and equipped with only 2kb of RAM and 16kb of Flash.
+This repository contains Iterative Pruning & QA-Training scripts implementing the attention-condenser-based TinySpeech architecture, aimed at offsetting the computational cost of using sparse convulution modules. Moreover, it contains inference scripts designed to run on the VSDSquadron-Mini board, carrying the CH32V003 microcontroller and equipped with only 2kb of RAM and 16kb of Flash.
 
-This project requires a ESP32 for interfacing with the audio sensor, and is responsible for sampling them into MFCC embeddings. These vectors will then be passed into the board for inference. 
+QP-TinySpeech deployments allow for on-device command recognition for voice-assistants on low-power devices. 
 
 > Please reach out to araviki`at`purdue`dot`edu for any questions 
 

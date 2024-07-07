@@ -1,5 +1,10 @@
-QP-TinySpeech: Extremely Low-Bit Quantized + Pruned TinySpeech-Z for low-power MCUs
+<div align="center">
 
+# 🗣️🔥 QP-TinySpeech
+
+🚀 Extremely Low-Bit Quantized + Pruned TinySpeech-Z for low-power MCUs 🚀
+
+</div>
 
 # Overview 
 

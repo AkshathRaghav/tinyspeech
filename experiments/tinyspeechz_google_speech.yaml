@@ -1,0 +1,18 @@
+name: "TinySpeechZ"
+dataset: "google/speech_commands"
+version: "v0.01"
+split: "train+test"
+device: "cuda"
+
+save_pth: "models"
+epochs: 50
+batch_size: 64
+
+lr: 0.01
+momentum: 0.9
+seed: 42
+
+labels: ["Yes", "No",  "On", "Off", "Stop", "Go"]
+
+quant: False 
+prune: False 

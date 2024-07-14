@@ -6,8 +6,9 @@ def convert_to_contiguous(lst):
     return {value: index for index, value in enumerate(sorted(set(lst)))}
     
 def sample_noise(example):
+    import random 
     if example["label"] == "_silence_":
-        random_offset = randint(0, len(example["audio"]["array"]) - example["audio"]["sampling_rate"] - 1)
+        random_offset = random.randint(0, len(example["audio"]["array"]) - example["audio"]["sampling_rate"] - 1)
         example["audio"]["array"] = example["audio"]["array"][random_offset : random_offset + example["audio"]["sampling_rate"]]
     return example
 
@@ -30,7 +31,7 @@ def preprocess_audio_batch(batch):
 
         mfccs = torchaudio.transforms.MFCC(
             sample_rate=sr,
-            n_mfcc=13,
+            n_mfcc=12,
             melkwargs={
                 "n_fft": 1024,
                 "hop_length": int(sr * 0.01), # 10ms shift

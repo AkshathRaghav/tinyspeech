@@ -6,6 +6,74 @@ import torch.nn.functional as F
 # w/ Quant
 # ----
 
+class QModel(nn.Module):
+    def __init__(self, model, quant_type='4bitsym', w_scale='PerTensor', quant_scale=0.25):
+        super(QModel, self).__init__()
+        self.model = model
+        self.bit_quant = BitQuant(QuantType=quant_type, WScale=w_scale, quantscale=quant_scale)
+        self.original_weights = {}
+        self.scales = {}
+
+    def quantize(self):
+        for name, param in self.model.named_parameters():
+            if 'weight' in name or 'bias' in name or 'scale' in name:
+                q_param, scale, _ = self.bit_quant.weight_quant(param.data)
+                self.original_weights[name] = param.data.clone()
+                param.data = q_param
+                self.scales[name] = scale
+
+    def forward(self, x):
+        # Unquantize weights for inference
+        for name, scale in self.scales.items():
+            param = self.get_submodule(name)
+            param.data = self.bit_quant.dequantize_tensor(param.data, scale, 0)
+
+        # Forward pass
+        output = self.model(x)
+
+        # Requantize weights after inference
+        for name, original_weight in self.original_weights.items():
+            param = self.get_submodule(name)
+            param.data = original_weight
+        
+        return output
+
+    def get_submodule(self, target):
+        names = target.split('.')
+        mod = self.model
+        for name in names[:-1]:
+            mod = getattr(mod, name)
+        return getattr(mod, names[-1])
+
+    def numel(self):
+        total_params = 0
+        param_details = {}
+        for name, param in self.model.named_parameters():
+            num_params = param.numel()
+            param_details[name] = num_params
+            total_params += num_params
+        return total_params, param_details
+
+    def save_checkpoint(self, filepath):
+        checkpoint = {
+            'model_state_dict': self.model.state_dict(),
+            'original_weights': self.original_weights,
+            'scales': self.scales,
+            'quant_type': self.bit_quant.QuantType,
+            'w_scale': self.bit_quant.WScale,
+            'quant_scale': self.bit_quant.quantscale
+        }
+        torch.save(checkpoint, filepath)
+
+    def load_checkpoint(self, filepath):
+        checkpoint = torch.load(filepath)
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.original_weights = checkpoint['original_weights']
+        self.scales = checkpoint['scales']
+        self.bit_quant.QuantType = checkpoint['quant_type']
+        self.bit_quant.WScale = checkpoint['w_scale']
+        self.bit_quant.quantscale = checkpoint['quant_scale']
+
 class BitQuant:
     def __init__(self, QuantType='4bitsym', WScale='PerTensor', quantscale=0.25):
         self.QuantType = QuantType
@@ -13,8 +81,17 @@ class BitQuant:
         self.quantscale = quantscale
 
     def activation_quant(self, x):
-        scale = 127.0 / x.abs().max(dim=-1, keepdim=True).values.clamp_(min=1e-5)
-        y = (x * scale).round().clamp_(-128, 127)
+        if self.QuantType == '2bitsym':
+            scale = 1.0 / x.abs().max(dim=-1, keepdim=True).values.clamp_(min=1e-5)
+            y = (x * scale).round().clamp_(-2, 1)
+        elif self.QuantType == '4bitsym':
+            scale = 7.0 / x.abs().max(dim=-1, keepdim=True).values.clamp_(min=1e-5)
+            y = (x * scale).round().clamp_(-8, 7)
+        elif self.QuantType == '8bit':
+            scale = 127.0 / x.abs().max(dim=-1, keepdim=True).values.clamp_(min=1e-5)
+            y = (x * scale).round().clamp_(-128, 127)
+        else:
+            raise AssertionError(f"Invalid QuantType: {self.QuantType}. Expected one of: '2bitsym', '4bitsym', '8bit'")
         return y, scale
 
     def weight_quant(self, w):
@@ -42,32 +119,46 @@ class BitQuant:
 
         return u, scale, bpw
 
+    def ste(self, x_q, x_scale, x): 
+        """ 
+        Applying STE for approximating gradients during backprop to avoid clipping  
+        """
+        return x + (x_q / x_scale - x).detach() 
+
     def norm(self, x):
         """Using only RMS"""
         y = torch.sqrt(torch.mean(x**2, dim=(-2,-1), keepdim=True))
         return x / y
 
-class BitParameter(nn.Module, BitQuant):
-    def __init__(self, shape, QuantType='4bitsym', WScale='PerTensor', NormType='RMS', quantscale=0.25):
-        super(BitParameter, self).__init__()
-        self.param = nn.Parameter(torch.randn(shape))
+    def dequantize_tensor(self, quantized_tensor, scale):
+        if self.QuantType == '2bitsym':
+            dequantized_tensor = (quantized_tensor + 0.5) / scale
+        elif self.QuantType == '4bitsym':
+            dequantized_tensor = (quantized_tensor + 0.5) / scale
+        elif self.QuantType == '8bit':
+            dequantized_tensor = quantized_tensor / scale
+        else:
+            raise AssertionError(f"Invalid QuantType: {self.QuantType}. Expected one of: '2bitsym', '4bitsym', '8bit'")
+        return dequantized_tensor
+
+class BitParameter(nn.Parameter, BitQuant):
+    def __init__(self, val, QuantType='4bitsym', WScale='PerTensor', NormType='RMS', quantscale=0.25):
+        nn.Parameter.__init__(val)
         BitQuant.__init__(self, QuantType, WScale, quantscale)
         self.NormType = NormType
 
     def forward(self, x):
         x_norm = self.norm(x)
-        param_norm = self.norm(self.param)
+        param_norm = self.norm(self.data) 
         
-        if self.QuantType == 'None':
-            y = x_norm * param_norm
-        else:
-            x_int, x_scale = self.activation_quant(x_norm)
-            x_quant = x_norm + (x_int / x_scale - x_norm).detach()
-            
-            param_int, param_scale, _ = self.weight_quant(param_norm)
-            param_quant = param_norm + (param_int / param_scale - param_norm).detach()
-            y = x_quant * param_quant
+        x_int, x_scale = self.activation_quant(x_norm)
+        x_quant = self.ste(x_int, x_scale, x_norm)
         
+        param_int, param_scale, _ = self.weight_quant(param_norm)
+        param_quant = self.ste(param_int, param_scale, param_norm)
+
+        y = x_quant * param_quant
+    
         return y
 
 class BitBatchNorm2d(nn.BatchNorm2d, BitQuant):
@@ -81,38 +172,18 @@ class BitBatchNorm2d(nn.BatchNorm2d, BitQuant):
         w = self.weight
         b = self.bias
         
-        if self.QuantType == 'None':
-            y = F.batch_norm(x_norm, self.running_mean, self.running_var, w, b, self.training, self.momentum, self.eps)
-        else:
-            x_int, x_scale = self.activation_quant(x_norm)
-            x_quant = x_norm + (x_int / x_scale - x_norm).detach()
-            
-            w_int, w_scale, _ = self.weight_quant(w)
-            w_quant = w + (w_int / w_scale - w).detach()
-            
-            b_int, b_scale, _ = self.weight_quant(b)
-            b_quant = b + (b_int / b_scale - b).detach()
-            
-            y = F.batch_norm(x_quant, self.running_mean, self.running_var, w_quant, b_quant, self.training, self.momentum, self.eps)
+        x_int, x_scale = self.activation_quant(x_norm)
+        x_quant = self.ste(x_int, x_scale, x_norm)
         
+        w_int, w_scale, _ = self.weight_quant(w)
+        w_quant = self.ste(w_int, w_scale, w)
+        
+        b_int, b_scale, _ = self.weight_quant(b)
+        b_quant = self.ste(b_int, b_scale, b)
+        
+        y = F.batch_norm(x_quant, self.running_mean, self.running_var, w_quant, b_quant, self.training, self.momentum, self.eps)
+    
         return y
-
-class BitMaxPool2d(nn.MaxPool2d, BitQuant):
-    def __init__(self, kernel_size, stride=None, padding=0, QuantType='4bitsym', WScale='PerTensor', NormType='RMS', quantscale=0.25):
-        nn.MaxPool2d.__init__(self, kernel_size, stride, padding)
-        BitQuant.__init__(self, QuantType, WScale, quantscale)
-        self.NormType = NormType
-
-    def forward(self, x):
-        x_norm = self.norm(x)
-        if self.QuantType == 'None':
-            y = F.max_pool2d(x_norm, self.kernel_size, self.stride, self.padding)
-        else:
-            x_int, x_scale = self.activation_quant(x_norm)
-            x_quant = x_norm + (x_int / x_scale - x_norm).detach()
-            y = F.max_pool2d(x_quant, self.kernel_size, self.stride, self.padding)
-        return y
-
 
 class BitConvTranspose2d(nn.ConvTranspose2d, BitQuant):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, output_padding=0, groups=1, QuantType='4bitsym', WScale='PerTensor', NormType='RMS', quantscale=0.25):
@@ -123,45 +194,90 @@ class BitConvTranspose2d(nn.ConvTranspose2d, BitQuant):
     def forward(self, x):
         x_norm = self.norm(x)
         w = self.weight
-        if self.QuantType == 'None':
-            y = F.conv_transpose2d(x_norm, w, stride=self.stride, padding=self.padding, output_padding=self.output_padding, groups=self.groups)
-        else:
-            x_int, x_scale = self.activation_quant(x_norm)
-            x_quant = x_norm + (x_int / x_scale - x_norm).detach()
-            w_int, w_scale, _ = self.weight_quant(w)
-            w_quant = w + (w_int / w_scale - w).detach()
-            y = F.conv_transpose2d(x_quant, w_quant, stride=self.stride, padding=self.padding, output_padding=self.output_padding, groups=self.groups)
+
+        x_int, x_scale = self.activation_quant(x_norm)
+        x_quant = self.ste(x_int, x_scale, x_norm)
+
+        w_int, w_scale, _ = self.weight_quant(w)
+        w_quant = self.ste(w_int, w_scale, w)
+        y = F.conv_transpose2d(x_quant, w_quant, stride=self.stride, padding=self.padding, output_padding=self.output_padding, groups=self.groups)
         return y
 
+class BitLinear(nn.Linear, BitQuant):
+    def __init__(self, in_features, out_features, bias=False, QuantType='Binary', WScale='PerTensor', NormType='RMS', quantscale=0.25):
+        nn.Linear.__init__(self, in_features, out_features, bias=False)
+        BitQuant.__init__(self, QuantType, WScale, quantscale)
+
+        self.NormType = NormType
+
+    def forward(self, x):
+        w = self.weight # a weight tensor with shape [d, k]
+        x_norm = self.norm(x)
+
+        x_int, x_scale = self.activation_quant(x_norm)
+        x_quant = self.ste(x_int, x_scale, x_norm)
+
+        w_int, w_scale, _ = self.weight_quant(w)
+        w_quant = self.ste(w_int, w_scale, w)
+
+        y = F.linear(x_quant, w_quant)
+        return y
+
+
+class BitConv2d(nn.Conv2d, BitQuant):
+    def __init__(self, in_channels, out_channels, kernel_size, stride, padding, groups=1,  QuantType='4bitsym', WScale='PerTensor', NormType='RMS', quantscale=0.25):
+        nn.Conv2d.__init__(self,in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding, groups=groups, bias=False)
+        BitQuant.__init__(self, QuantType, WScale, quantscale)
+
+        self.NormType = NormType
+        self.groups = groups
+        self.stride = stride
+        self.padding = padding
+
+    def forward(self, x):
+        w = self.weight 
+        x_norm = self.norm(x)
+
+        x_int, x_scale = self.activation_quant(x_norm)
+        x_quant = self.ste(x_int, x_scale, x_norm)  
+
+        w_int, w_scale, _ = self.weight_quant(w)
+        w_quant = self.ste(w_int, w_scale, w)
+
+        y = F.conv2d(x_quant, w_quant, groups=self.groups, stride=self.stride, padding=self.padding, bias=None)
+        return y
+
+    
 class QAttentionCondenser(nn.Module):
     def __init__(self, in_channels, mid_channels, out_channels, QuantType='4bitsym', WScale='PerTensor', NormType='RMS', quantscale=0.25):
         super(QAttentionCondenser, self).__init__()
-        self.condense = BitMaxPool2d(kernel_size=2, stride=2, QuantType=QuantType, WScale=WScale, NormType=NormType, quantscale=quantscale)
+        self.condense = nn.MaxPool2d(kernel_size=2, stride=2)
         self.group_conv = BitConv2d(in_channels, mid_channels, kernel_size=1, stride=1, padding=0, groups=1, QuantType=QuantType, WScale=WScale, NormType=NormType, quantscale=quantscale)
         self.pointwise_conv = BitConv2d(mid_channels, out_channels, kernel_size=1, stride=1, padding=0, QuantType=QuantType, WScale=WScale, NormType=NormType, quantscale=quantscale)
-        self.expand = BitConvTranspose2d(out_channels, in_channels, kernel_size=2, stride=2, padding=0, QuantType=QuantType, WScale=WScale, NormType=NormType, quantscale=quantscale)
-        self.scale = BitParameter((1, in_channels, 1, 1), QuantType=QuantType, WScale=WScale, NormType=NormType, quantscale=quantscale)
-    
+        self.scale = BitParameter(torch.Tensor(1))
+        self.upsample = nn.Upsample(scale_factor=2, mode='nearest')  
+        self.expand_conv = BitConv2d(out_channels, in_channels, kernel_size=1, stride=1, padding=0, QuantType=QuantType, WScale=WScale, NormType=NormType, quantscale=quantscale)
+
     def forward(self, x):
-        residual = x
-        Q = self.condense(x)
-        K = F.relu(self.group_conv(Q))
+        residual = x  
+        Q = self.condense(x)  
+        K = F.relu(self.group_conv(Q)) 
         K = F.relu(self.pointwise_conv(K))
-        A = self.expand(K)
-        if A.size() != x.size():
-            A = F.interpolate(A, size=x.size()[2:])
-        S = torch.sigmoid(A)
-        V_prime = residual * S * self.scale(x)  # Apply scale parameter
-        V_prime += residual
+        A = self.upsample(K)
+        A = self.expand_conv(A)   
+        S = torch.sigmoid(A)  
+        V_prime = residual * S * self.scale  
+        V_prime += residual  
         return V_prime
 
-class QAttnCond_Block(nn.Module): 
+
+class QAttn_BN_Block(nn.Module): 
     def __init__(self, in_channels, mid_channels_0, out_channels_0, mid_channels_1, out_channels_1, QuantType='4bitsym', WScale='PerTensor', NormType='RMS', quantscale=0.25, test=0): 
-        super(QAttnCond_Block, self).__init__()
-        self.layer1 = AttentionCondenser(in_channels, mid_channels_0, out_channels_0, QuantType=QuantType, WScale=WScale, NormType=NormType, quantscale=quantscale)
-        self.layer2 = BitBatchNorm2d(out_channels_0, QuantType=QuantType, WScale=WScale, NormType=NormType, quantscale=quantscale)
-        self.layer3 = AttentionCondenser(out_channels_0, mid_channels_1, out_channels_1, QuantType=QuantType, WScale=WScale, NormType=NormType, quantscale=quantscale)
-        self.layer4 = BitBatchNorm2d(out_channels_1, QuantType=QuantType, WScale=WScale, NormType=NormType, quantscale=quantscale)
+        super(QAttn_BN_Block, self).__init__()
+        self.layer1 = QAttentionCondenser(in_channels, mid_channels_0, out_channels_0, QuantType=QuantType, WScale=WScale, NormType=NormType, quantscale=quantscale)
+        self.layer2 = BitBatchNorm2d(in_channels, QuantType=QuantType, WScale=WScale, NormType=NormType, quantscale=quantscale)
+        self.layer3 = QAttentionCondenser(in_channels, mid_channels_1, out_channels_1, QuantType=QuantType, WScale=WScale, NormType=NormType, quantscale=quantscale)
+        self.layer4 = BitBatchNorm2d(in_channels, QuantType=QuantType, WScale=WScale, NormType=NormType, quantscale=quantscale)
         self.test = test 
 
     def forward(self, x): 
@@ -198,7 +314,6 @@ class AttentionCondenser(nn.Module):
         V_prime += residual  
         return V_prime
 
-
 class Attn_BN_Block(nn.Module): 
     def __init__(self, in_channels, mid_channels_0, out_channels_0, mid_channels_1, out_channels_1, test=0): 
         super(Attn_BN_Block, self).__init__()
@@ -213,41 +328,6 @@ class Attn_BN_Block(nn.Module):
         x_ = self.layer2(x_)
         x_ = self.layer3(x_)
         x_ = self.layer4(x_)
-
         x_ += x
-
         return x 
 
-class TinySpeechZ(nn.Module): 
-    def __init__(self, num_classes, test=0): 
-        super(TinySpeech, self).__init__()
-        self.conv1 = nn.Conv2d(1, 7, kernel_size=3, stride=1, padding=1)
-
-        self.block1 = Attn_BN_Block(in_channels=7, mid_channels_0=14, out_channels_0=3, mid_channels_1=6, out_channels_1=7, test=test)
-        self.block2 = Attn_BN_Block(in_channels=7, mid_channels_0=14, out_channels_0=3, mid_channels_1=6, out_channels_1=7, test=test)
-        self.block3 = Attn_BN_Block(in_channels=7, mid_channels_0=14, out_channels_0=2, mid_channels_1=4, out_channels_1=7, test=test)
-        self.block4 = Attn_BN_Block(in_channels=7, mid_channels_0=14, out_channels_0=11, mid_channels_1=22, out_channels_1=7, test=test)
-        self.block5 = Attn_BN_Block(in_channels=7, mid_channels_0=14, out_channels_0=14, mid_channels_1=28, out_channels_1=7, test=test)
-        self.block6 = Attn_BN_Block(in_channels=7, mid_channels_0=14, out_channels_0=10, mid_channels_1=20, out_channels_1=7, test=test)
-
-        self.conv2 = nn.Conv2d(in_channels=7, out_channels=17, kernel_size=3, stride=1, padding=1)
-        self.global_pool = nn.AdaptiveAvgPool2d(1)
-        self.fc = nn.Linear(17, num_classes)
-        self.test = test 
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-    def forward(self, x):
-        x = x.to(self.device)
-        x = F.relu(self.conv1(x))  
-        x = self.block1(x)
-        x = self.block2(x)
-        x = self.block3(x)
-        x = self.block4(x)
-        x = self.block5(x)
-        x = self.block6(x)
-        x = F.relu(self.conv2(x))  
-        x = self.global_pool(x)  
-        x = x.view(x.size(0), -1)  
-        x = self.fc(x)  
-            
-        return x

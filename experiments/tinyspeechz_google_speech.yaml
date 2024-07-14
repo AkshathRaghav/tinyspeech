@@ -1,18 +1,25 @@
 name: "TinySpeechZ"
-dataset: "google/speech_commands"
-version: "v0.01"
-split: "train+test"
-device: "cuda"
+device: "cuda:0"
+
+# dataset: 
+#   name: "google/speech_commands"
+#   version: "v0.01"
+#   split: "train+test"
+
+dataset:  
+  path: "./data/filtered"
 
 save_pth: "models"
-epochs: 50
+epochs: 40
 batch_size: 64
 
-lr: 0.01
-momentum: 0.9
+lr: 0.008
+momentum: 0.95
 seed: 42
 
 labels: ["Yes", "No",  "On", "Off", "Stop", "Go"]
 
-quant: False 
-prune: False 
+quant: True    
+model_type: 'Z'
+quant_type: 8
+prune: False  

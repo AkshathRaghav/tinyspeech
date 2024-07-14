@@ -10,14 +10,17 @@
 
 # Overview 
 
-This repository implements the attention-condenser-based TinySpeech architecture, aimed at offsetting the dependence (and subsequent computational cost) of  sparse convulution layers. We also provide a training and inference engine for the Z, M and X families achieving 91%+ accuracy. Moreover, this project contains drivers to run the model on the VSDSquadron-Mini board, carrying the CH32V003 MCU and equipped with only 2kb SRAM | 16kb Flash.
+This repository implements the attention-condenser-based TinySpeech architecture, aimed at offsetting the dependence (and subsequent computational cost) of  sparse convulution layers. This brings the parameter count orders of magnitude down from previous state of the art, while maintaining a similar accuracy. We also provide a training and inference engine for the Z, M and X families achieving 91%+ accuracy. Moreover, this project contains drivers to run the model on the VSDSquadron-Mini board, carrying the CH32V003 MCU and equipped with only 2kb SRAM | 16kb Flash.
 
-Paper: https://arxiv.org/abs/2008.04245
-Official Code: N/A 
-    
+<div align="center">
+    <i> Paper: https://arxiv.org/abs/2008.04245 | Official Code: </em>N/A</emm> </i>
+</div>
+
+
+
 # Results 
 
-QP-TinySpeech deployments allows for on-device command recognition for voice-assistants on low-power devices. 
+![image](https://github.com/user-attachments/assets/afde945d-5d28-41eb-8c2e-6781978e893c)
 
 # Components Utilized 
 
@@ -31,21 +34,21 @@ First, install required packages using `pip install -r requirements.txt`.
 
 ### Training 
 
-You can train the TinySpeech family of models using: 
+You can train the TinySpeech family of models using CLI arguments, or one of the given experiment configs: 
 
 ```
-python train.py --save_pth "models" --epochs 50 --batch_size 64 --lr 0.01 --momentum 0.9 --seed 42 --device "cuda"
-```
+python train.py --save_pth "models" --quant --quant_type 8 --model_type Z --epochs 50 --batch_size 64 --lr 0.01 --momentum 0.9 --seed 42 --device "cuda"
 
-**Preferred**: Use one of the `config_*.yaml` files provided in './experiments' like follows: 
+# OR
 
-```
 python train.py --config tinyspeechz_google_speech.yaml
 ```
 
 # Remarks
 
-Run `python -m torch.utils.bottleneck train.py --config <your_config_yaml>` to evaluate efficiency. 
+Run `python -m torch.utils.bottleneck train.py --config <your_config_yaml>` to evaluate efficiency when training. 
+
+![image](https://github.com/user-attachments/assets/0e94ac50-ff67-4b37-b3a3-04274f8535f0)
 
 Attention condensers are designed to replace or reduce the need for traditional convolutional layers, which are typically resource-intensive. The idea is to leverage a self-contained self-attention mechanism that can effectively capture and model both local and cross-channel activation relationships within the input data.
 

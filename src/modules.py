@@ -185,23 +185,6 @@ class BitBatchNorm2d(nn.BatchNorm2d, BitQuant):
     
         return y
 
-class BitConvTranspose2d(nn.ConvTranspose2d, BitQuant):
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, output_padding=0, groups=1, QuantType='4bitsym', WScale='PerTensor', NormType='RMS', quantscale=0.25):
-        nn.ConvTranspose2d.__init__(self, in_channels, out_channels, kernel_size, stride, padding, output_padding, groups, bias=False)
-        BitQuant.__init__(self, QuantType, WScale, quantscale)
-        self.NormType = NormType
-
-    def forward(self, x):
-        x_norm = self.norm(x)
-        w = self.weight
-
-        x_int, x_scale = self.activation_quant(x_norm)
-        x_quant = self.ste(x_int, x_scale, x_norm)
-
-        w_int, w_scale, _ = self.weight_quant(w)
-        w_quant = self.ste(w_int, w_scale, w)
-        y = F.conv_transpose2d(x_quant, w_quant, stride=self.stride, padding=self.padding, output_padding=self.output_padding, groups=self.groups)
-        return y
 
 class BitLinear(nn.Linear, BitQuant):
     def __init__(self, in_features, out_features, bias=False, QuantType='Binary', WScale='PerTensor', NormType='RMS', quantscale=0.25):

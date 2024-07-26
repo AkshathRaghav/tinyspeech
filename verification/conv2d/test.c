@@ -1,128 +1,159 @@
-#include <stdint.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <math.h>
+#include <float.h>
 #include "conv_layer.h"
 
-void dequantize(int8_t *quantized, float scale, int8_t zp, float *output, int size) {
-    for (int i = 0; i < size; i++) {
-        output[i] = (quantized[i] - zp) * scale;
+// Define the dimensions as per your requirement
+#define IN_CHANNELS 1
+#define MID_CHANNELS 7
+#define KERNEL_SIZE 1
+#define INPUT_HEIGHT 12
+#define INPUT_WIDTH 94
+#define BATCH_SIZE 1
+
+typedef struct {
+    int8_t *data;
+    int8_t shape[4]; // [N, C, H, W]
+    float scale; 
+} Tensor;
+
+Tensor load_tensor(const char *filename) {
+    FILE *file = fopen(filename, "rb");
+    if (!file) {
+        fprintf(stderr, "Could not open file %s\n", filename);
+        exit(EXIT_FAILURE);
     }
+
+    Tensor tensor;
+
+    for (int i = 0; i < 4; ++i) {
+        fread(&tensor.shape[i], sizeof(int8_t), 1, file);
+    }
+
+    fread(&tensor.scale, sizeof(float), 1, file);
+
+    int num_elements = tensor.shape[0] * tensor.shape[1] * tensor.shape[2] * tensor.shape[3];
+    tensor.data = (int8_t *)malloc(num_elements * sizeof(int8_t));
+
+    fread(tensor.data, sizeof(int8_t), num_elements, file);
+    fclose(file);
+
+    fprintf(stdout, "Loaded tensor with shape [%d, %d, %d, %d] and scale %f\n", tensor.shape[0], tensor.shape[1], tensor.shape[2], tensor.shape[3], tensor.scale);
+
+    return tensor;
 }
 
-void conv2d(float *input, float *output, float *kernel, float *bias,
-            int input_height, int input_width, int input_depth,
-            int kernel_height, int kernel_width, int output_depth,
-            int stride, int padding) {
-    
-    int output_height = (input_height - kernel_height + 2 * padding) / stride + 1;
-    int output_width = (input_width - kernel_width + 2 * padding) / stride + 1;
+int get_index(int n, int c, int h, int w, int N, int C, int H, int W) {
+    return n * (C * H * W) + c * (H * W) + h * W + w;
+}
 
-    for (int od = 0; od < output_depth; od++) {
-        for (int oh = 0; oh < output_height; oh++) {
-            for (int ow = 0; ow < output_width; ow++) {
-                float sum = 0.0;
-                for (int id = 0; id < input_depth; id++) {
-                    for (int kh = 0; kh < kernel_height; kh++) {
-                        for (int kw = 0; kw < kernel_width; kw++) {
-                            int ih = oh * stride - padding + kh;
-                            int iw = ow * stride - padding + kw;
-                            if (ih >= 0 && ih < input_height && iw >= 0 && iw < input_width) {
-                                sum += input[id * input_height * input_width + ih * input_width + iw] *
-                                       kernel[od * input_depth * kernel_height * kernel_width +
-                                              id * kernel_height * kernel_width +
-                                              kh * kernel_width + kw];
-                            }
-                        }
-                    }
-                }
-                output[od * output_height * output_width + oh * output_width + ow] = sum + bias[od];
-            }
+
+void relu(int8_t *input, int size) {
+    for (int i = 0; i < size; i++) {
+        if (input[i] < 0) {
+            input[i] = 0;
         }
     }
 }
 
-void conv2d_quantized(int8_t *input_q, int8_t *kernel_q, int8_t *bias_q, int8_t *output_q,
-                      int input_height, int input_width, int input_depth,
-                      int kernel_height, int kernel_width, int output_depth,
-                      int stride, int padding, float input_scale, float kernel_scale,
-                      float bias_scale, float output_scale, int8_t input_zp, int8_t kernel_zp,
-                      int8_t bias_zp, int8_t output_zp) {
-    
-    int input_size = input_height * input_width * input_depth;
-    int kernel_size = kernel_height * kernel_width * input_depth * output_depth;
-    int bias_size = output_depth;
-    int output_height = (input_height - kernel_height + 2 * padding) / stride + 1;
-    int output_width = (input_width - kernel_width + 2 * padding) / stride + 1;
-    int output_size = output_height * output_width * output_depth;
-
-    float *input = (float *)malloc(input_size * sizeof(float));
-    float *kernel = (float *)malloc(kernel_size * sizeof(float));
-    float *bias = (float *)malloc(bias_size * sizeof(float));
-    float *output = (float *)malloc(output_size * sizeof(float));
-
-    dequantize(input_q, input_scale, input_zp, input, input_size);
-    dequantize(kernel_q, kernel_scale, kernel_zp, kernel, kernel_size);
-    dequantize(bias_q, bias_scale, bias_zp, bias, bias_size);
-
-    conv2d(input, output, kernel, bias,
-           input_height, input_width, input_depth,
-           kernel_height, kernel_width, output_depth,
-           stride, padding);
-
-    for (int i = 0; i < output_size; i++) {
-        output_q[i] = round(output[i] / output_scale) + output_zp;
+float compute_mean_abs(int32_t *w, size_t len) {
+    int sum = 0.0f;
+    for (size_t i = 0; i < len; i++) {
+        sum += fabsf((int)w[i]);
     }
+    return sum / len;
+}
 
-    free(input);
-    free(kernel);
-    free(bias);
-    free(output);
+int8_t clamp(int8_t val, int8_t min_val, int8_t max_val) {
+    if (val < min_val) return min_val;
+    if (val > max_val) return max_val;
+    return val;
+}
+
+void quantize_weights(int32_t *w, int8_t *u, size_t len) {
+    float mag = compute_mean_abs(w, len);
+    float scale = 32 / mag;
+
+    for (size_t i = 0; i < len; i++) {
+        u[i] = (int8_t) clamp(roundf(w[i] * scale), -127.0f, 127.0f);
+    }
+}
+
+
+Tensor conv2d(Tensor *input, Tensor *output) {
+    int input_size = input->shape[0] * input->shape[1] * input->shape[2] * input->shape[3];
+
+    output->shape[0] = BATCH_SIZE;
+    output->shape[1] = MID_CHANNELS;
+    output->shape[2] = INPUT_HEIGHT;
+    output->shape[3] = INPUT_WIDTH;
+    int output_size = output->shape[0] * output->shape[1] * output->shape[2] * output->shape[3];
+    output->data = (int8_t *)malloc(output_size * sizeof(int8_t));
+    int32_t *int32_output = (int32_t *)malloc(output_size * sizeof(int32_t));
+
+    fprintf(stdout, "Input size: %d, Output size: %d\n", input_size, output_size);
+
+    for (int n = 0; n < BATCH_SIZE; n++) {
+        for (int oc = 0; oc < MID_CHANNELS; oc++) {
+            for (int h = 0; h < INPUT_HEIGHT; h++) {
+                for (int w = 0; w < INPUT_WIDTH; w++) {
+                    int out_index = get_index(n, oc, h, w, BATCH_SIZE, MID_CHANNELS, INPUT_HEIGHT, INPUT_WIDTH);
+                    int32_output[out_index] = 0;
+                    for (int ic = 0; ic < IN_CHANNELS; ic++) {
+                        for (int kh = 0; kh < KERNEL_SIZE; kh++) {
+                            for (int kw = 0; kw < KERNEL_SIZE; kw++) {
+                                int ih = h + kh;
+                                int iw = w + kw;
+
+                                int in_index = get_index(n, ic, ih, iw, BATCH_SIZE, IN_CHANNELS, INPUT_HEIGHT, INPUT_WIDTH);
+                                int weight_index = get_index(oc, ic, kh, kw, MID_CHANNELS, IN_CHANNELS, KERNEL_SIZE, KERNEL_SIZE);
+
+                                int8_t input_value = (int8_t) input->data[in_index];
+                                int8_t weight_value = (int8_t) conv_weights[weight_index];
+                            
+                                if (input_value != 0 && weight_value != 0) {
+                                    int32_output[out_index] += (int32_t) (input_value * weight_value);
+                                } else { 
+                                    int32_output[out_index] += 0;
+                                }
+
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    quantize_weights(int32_output, output->data, output_size);
+    relu(output->data, output_size);
+}
+
+float mean(int8_t *data, int size) {
+    float sum = 0;
+    for (int i = 0; i < size; i++) {
+        sum += data[i];
+    }
+    return sum / size;
 }
 
 int main() {
-    // Load the quantized weights 
-    const uint8_t *quantized_weights = conv_weights;
-    const uint8_t *quantized_bias = conv_bias;
+    Tensor input_tensor = load_tensor("input_tensor.bin");
+    Tensor expected_output_tensor = load_tensor("output_tensor.bin");
+    Tensor output_tensor;
 
-    int input_height = 12;
-    int input_width = 94;
-    int input_depth = 1;
+    conv2d(&input_tensor, &output_tensor);   
 
-    int kernel_height = 1;
-    int kernel_width = 1;
-    int output_depth = 7;
-
-    int stride = 1;
-    int padding = 0;
-    int output_height = (input_height - kernel_height + 2 * padding) / stride + 1;
-    int output_width = (input_width - kernel_width + 2 * padding) / stride + 1;
-
-    float input_scale = 0.1f;
-    float kernel_scale = 0.1f;
-    float bias_scale = 0.1f;
-    float output_scale = 0.1f;
-    int8_t input_zp = 128;
-    int8_t kernel_zp = 128;
-    int8_t bias_zp = 128;
-    int8_t output_zp = 128;
-
-    // Allocate memory for the input and output tensors
-    int8_t *input_q = (int8_t *)malloc(64 * input_height * input_width * sizeof(int8_t));
-    int8_t *output_q = (int8_t *)malloc(64 * output_height * output_width * output_depth * sizeof(int8_t));
-
-    for (int i = 0; i < 64 * input_height * input_width; i++) {
-        input_q[i] = rand() % 256;
-    }
-
-    for (int i = 0; i < 64; i++) {
-        conv2d_quantized(input_q + i * input_height * input_width, quantized_weights, quantized_bias, output_q + i * output_height * output_width * output_depth,
-                         input_height, input_width, input_depth, kernel_height, kernel_width, output_depth, stride, padding,
-                         input_scale, kernel_scale, bias_scale, output_scale, input_zp, kernel_zp, bias_zp, output_zp);
-    }
-
-    free(input_q);
-    free(output_q);
-
-    return 0;
+    int output_size = output_tensor.shape[0] * output_tensor.shape[1] * output_tensor.shape[2] * output_tensor.shape[3];
+    float expected = mean(expected_output_tensor.data, output_size);
+    float actual = mean(output_tensor.data, output_size);
+    
+    fprintf(stdout, "Expected mean: %f, Actual mean: %f\n", expected, actual);
+    // Don't try to equate them, C implements the quantized version 
+    
+    free(input_tensor.data);
+    free(expected_output_tensor.data);
+    free(output_tensor.data);
+    return 1; 
 }

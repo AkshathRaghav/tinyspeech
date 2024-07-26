@@ -185,7 +185,6 @@ class BitBatchNorm2d(nn.BatchNorm2d, BitQuant):
     
         return y
 
-
 class BitLinear(nn.Linear, BitQuant):
     def __init__(self, in_features, out_features, bias=False, QuantType='Binary', WScale='PerTensor', NormType='RMS', quantscale=0.25):
         nn.Linear.__init__(self, in_features, out_features, bias=False)
@@ -205,7 +204,6 @@ class BitLinear(nn.Linear, BitQuant):
 
         y = F.linear(x_quant, w_quant)
         return y
-
 
 class BitConv2d(nn.Conv2d, BitQuant):
     def __init__(self, in_channels, out_channels, kernel_size, stride, padding, groups=1,  QuantType='4bitsym', WScale='PerTensor', NormType='RMS', quantscale=0.25):
@@ -229,8 +227,7 @@ class BitConv2d(nn.Conv2d, BitQuant):
 
         y = F.conv2d(x_quant, w_quant, groups=self.groups, stride=self.stride, padding=self.padding, bias=None)
         return y
-
-    
+  
 class QAttentionCondenser(nn.Module):
     def __init__(self, in_channels, mid_channels, out_channels, QuantType='4bitsym', WScale='PerTensor', NormType='RMS', quantscale=0.25):
         super(QAttentionCondenser, self).__init__()
@@ -252,7 +249,6 @@ class QAttentionCondenser(nn.Module):
         V_prime = residual * S * self.scale  
         V_prime += residual  
         return V_prime
-
 
 class QAttn_BN_Block(nn.Module): 
     def __init__(self, in_channels, mid_channels_0, out_channels_0, mid_channels_1, out_channels_1, QuantType='4bitsym', WScale='PerTensor', NormType='RMS', quantscale=0.25, test=0): 

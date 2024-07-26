@@ -102,6 +102,7 @@ class TinySpeechZ(nn.Module):
         return "TinySpeechZ"
 
     def forward(self, x):
+
         x = x.to(self.device)
         x = F.relu(self.conv1(x))  
         x = self.block1(x)
@@ -112,5 +113,16 @@ class TinySpeechZ(nn.Module):
         x = self.global_pool(x)  
         x = x.view(x.size(0), -1)  
         x = self.fc(x)  
-            
+
         return x
+    
+# torch.Size([1, 1, 32, 32])
+# torch.Size([1, 7, 32, 32])
+# torch.Size([1, 7, 32, 32])
+# torch.Size([1, 7, 32, 32])
+# torch.Size([1, 7, 32, 32])
+# torch.Size([1, 7, 32, 32])
+# torch.Size([1, 17, 32, 32])
+# torch.Size([1, 17, 1, 1])
+# torch.Size([1, 17])
+# torch.Size([1, 10])

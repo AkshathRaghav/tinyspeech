@@ -73,48 +73,40 @@ class BitQuant:
             raise AssertionError(f"Invalid QuantType: {self.QuantType}. Expected one of: '2bitsym', '4bitsym', '8bit'")
         return dequantized_tensor
     
-class BitConv2d(nn.Conv2d, BitQuant):
-    def __init__(self, in_channels, out_channels, kernel_size, stride, padding, groups=1,  QuantType='4bitsym', WScale='PerTensor', NormType='RMS', quantscale=0.25):
-        nn.Conv2d.__init__(self,in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding, groups=groups, bias=False)
+class BitLinear(nn.Linear, BitQuant):
+    def __init__(self, in_features, out_features, bias=False, QuantType='Binary', WScale='PerTensor', NormType='RMS', quantscale=0.25):
+        nn.Linear.__init__(self, in_features, out_features, bias=False)
         BitQuant.__init__(self, QuantType, WScale, quantscale)
 
         self.NormType = NormType
-        self.groups = groups
-        self.stride = stride
-        self.padding = padding
 
     def forward(self, x):
         w = self.weight 
         x_norm = self.norm(x)
 
         x_int, x_scale = self.activation_quant(x_norm)
-        x_quant = self.ste(x_int, x_scale, x_norm)  
+        x_quant = self.ste(x_int, x_scale, x_norm)
 
         w_int, w_scale, _ = self.weight_quant(w)
         w_quant = self.ste(w_int, w_scale, w)
 
-        y = F.conv2d(x_quant, w_quant, groups=self.groups, stride=self.stride, padding=self.padding, bias=None)
+        y = F.linear(x_quant, w_quant)
         return y
-
-    def get_weight(self): 
-        w_int, w_scale, _ = self.weight_quant(self.weight)
-        return self.ste(w_int, w_scale, self.weight)
-
 
 def export_to_hfile(bpw, weights, weights_scale, filename):
     with open(filename, 'w') as f:
-        f.write("#ifndef CONV_LAYER_H\n")
-        f.write("#define CONV_LAYER_H\n\n")
+        f.write("#ifndef FC_LAYER_H\n")
+        f.write("#define FC_LAYER_H\n\n")
         f.write("#include <stdint.h>\n\n")
 
-        f.write(f"int8_t conv_weights[{weights.size}] = {{")
+        f.write(f"int8_t fc_weights[{weights.size}] = {{")
         f.write(", ".join(map(str, weights.flatten())))
         f.write("};\n\n")
-        f.write(f"float conv_weights_scale = {weights_scale};\n\n")
+        f.write(f"float fc_weights_scale = {weights_scale};\n\n")
 
         f.write(f"char* bpw = \"{bpw}\";\n")
 
-        f.write("#endif // CONV_LAYER_H\n")
+        f.write("#endif // FC_LAYER_H\n")
 
 def save_tensor_custom(tensor, scale, filename):
     shape = tensor.shape
@@ -125,23 +117,22 @@ def save_tensor_custom(tensor, scale, filename):
         f.write(tensor.tobytes())
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Training script') 
+    parser = argparse.ArgumentParser(description='Verification Parser') 
     parser.add_argument('--scale', type=float, default=0.25, help='Scaling for quantization')
     parser.add_argument('--bpw', type=str, default="8bit", help='Bits per weight')
     args = parser.parse_args()
 
-    in_channels = 1
-    mid_channels = 7
-    kernel_size = 1
-    conv_layer = BitConv2d(in_channels, mid_channels, kernel_size, stride=1, padding=0, QuantType=args.bpw, quantscale=args.scale)
+    in_features = 17
+    out_features = 10
+    fc_layer = BitLinear(in_features, out_features, QuantType=args.bpw, quantscale=args.scale)
     quant = BitQuant(QuantType=args.bpw, quantscale=args.scale)
 
-    quant_weight, quant_weight_scale, _ = quant.weight_quant(conv_layer.weight.data)
-    export_to_hfile(args.bpw, quant_weight.numpy(), quant_weight_scale.numpy(), "conv_layer.h")
+    quant_weight, quant_weight_scale, _ = quant.weight_quant(fc_layer.weight.data)
+    export_to_hfile(args.bpw, quant_weight.numpy(), quant_weight_scale.numpy(), "fc_layer.h")
 
     with torch.no_grad(): 
-        input_tensor = torch.randn(1, 1, 12, 94)
-        output_tensor = F.relu(conv_layer(input_tensor))
+        input_tensor = torch.randn(1, 17) # post GAP 
+        output_tensor = fc_layer(input_tensor)
 
     input_tensor, input_scale = quant.activation_quant(input_tensor)
     output_tensor, output_scale = quant.activation_quant(output_tensor)

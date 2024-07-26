@@ -7,3 +7,6 @@ src/__pycache__/
 .venv/
 */*.pth
 */*.h
+*/*.bin
+*/*.txt
+*/*.csv

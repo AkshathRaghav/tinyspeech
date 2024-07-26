@@ -5,7 +5,6 @@
 #include <float.h>
 #include "conv_layer.h"
 
-// Define the dimensions as per your requirement
 #define IN_CHANNELS 1
 #define MID_CHANNELS 7
 #define KERNEL_SIZE 1

@@ -6,7 +6,7 @@
 
 </div>
 
-**Update: TinySpeechZ has been quantized with 8bits, achieving 91% accuracy. Custom kernels are being written for the condenser layers**
+**Update: TinySpeechZ has been quantized with 8bits, achieving 91% accuracy. Verification of the C equivalents of a few layers are left.**
 
 # Overview 
 

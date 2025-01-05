@@ -91,7 +91,7 @@ class BitQuant:
             scale = 127.0 / x.abs().max(dim=-1, keepdim=True).values.clamp_(min=1e-5)
             y = (x * scale).round().clamp_(-128, 127)
         else:
-            raise AssertionError(f"Invalid QuantType: {self.QuantType}. Expected one of: '2bitsym', '4bitsym', '8bit'")
+            raise AssertionError(f'Invalid QuantType: {self.QuantType}. Expected one of: "2bitsym", "4bitsym", "8bit"')
         return y, scale
 
     def weight_quant(self, w):
@@ -309,4 +309,3 @@ class Attn_BN_Block(nn.Module):
         x_ = self.layer4(x_)
         x_ += x
         return x 
-

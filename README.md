@@ -6,13 +6,9 @@
 
 </div>
 
-**Update: TinySpeechZ has been quantized with 8bits, achieving 91% accuracy. Verification of the C equivalents of a few layers are left.**
-
 # Overview 
 
 This repository implements the attention-condenser-based TinySpeech architecture, aimed at offsetting the dependence (and subsequent computational cost) of  sparse convulution layers. This brings the parameter count orders of magnitude down from previous low-footprint attempts, while maintaining similar accuracies. We also provide a training and inference engine for the Z, Y and X families achieving 91%+ accuracy. Moreover, this project contains drivers to run the model on the VSDSquadron-Mini board, carrying the CH32V003 MCU and equipped with only 2kb SRAM | 16kb Flash.
-
-> np.int8 consumes 8 bits (1 byte) per element. An input tensor of [1, 12, 94] is 1128 bytes. Weights of 2.7k parameters is 2.7 bytes.  
 
 <div align="center">
     <i> Paper: https://arxiv.org/abs/2008.04245 | Official Code: </em>N/A</emm> </i>

@@ -1,0 +1,99 @@
+==67410== Memcheck, a memory error detector
+==67410== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==67410== Using Valgrind-3.15.0-608cb11914-20190413 and LibVEX; rerun with -h for copyright info
+==67410== Command: ./softmax
+==67410== Parent PID: 14859
+==67410== 
+--67410-- 
+--67410-- Valgrind options:
+--67410--    --leak-check=full
+--67410--    --show-leak-kinds=all
+--67410--    --track-origins=yes
+--67410--    --verbose
+--67410--    --log-file=valgrind-out1.txt
+--67410-- Contents of /proc/version:
+--67410--   Linux version 3.10.0-1160.108.1.el7.x86_64 (mockbuild@kbuilder.bsys.centos.org) (gcc version 4.8.5 20150623 (Red Hat 4.8.5-44) (GCC) ) #1 SMP Thu Jan 25 16:17:31 UTC 2024
+--67410-- 
+--67410-- Arch and hwcaps: AMD64, LittleEndian, amd64-cx16-lzcnt-rdtscp-sse3-ssse3-avx-avx2-bmi-f16c-rdrand
+--67410-- Page sizes: currently 4096, max supported 4096
+--67410-- Valgrind library directory: /usr/libexec/valgrind
+--67410-- Reading syms from /depot/euge/data/araviki/vsdsquadronmini/verification/upsample/softmax
+--67410-- Reading syms from /usr/lib64/ld-2.17.so
+--67410-- Reading syms from /usr/libexec/valgrind/memcheck-amd64-linux
+--67410--    object doesn't have a symbol table
+--67410--    object doesn't have a dynamic symbol table
+--67410-- Scheduler: using generic scheduler lock implementation.
+--67410-- Reading suppressions file: /usr/libexec/valgrind/default.supp
+==67410== embedded gdbserver: reading from /tmp/vgdb-pipe-from-vgdb-to-67410-by-araviki-on-gilbreth-fe02.rcac.purdue.edu
+==67410== embedded gdbserver: writing to   /tmp/vgdb-pipe-to-vgdb-from-67410-by-araviki-on-gilbreth-fe02.rcac.purdue.edu
+==67410== embedded gdbserver: shared mem   /tmp/vgdb-pipe-shared-mem-vgdb-67410-by-araviki-on-gilbreth-fe02.rcac.purdue.edu
+==67410== 
+==67410== TO CONTROL THIS PROCESS USING vgdb (which you probably
+==67410== don't want to do, unless you know exactly what you're doing,
+==67410== or are doing some strange experiment):
+==67410==   /usr/libexec/valgrind/../../bin/vgdb --pid=67410 ...command...
+==67410== 
+==67410== TO DEBUG THIS PROCESS USING GDB: start GDB like this
+==67410==   /path/to/gdb ./softmax
+==67410== and then give GDB the following command
+==67410==   target remote | /usr/libexec/valgrind/../../bin/vgdb --pid=67410
+==67410== --pid is optional if only one valgrind process is running
+==67410== 
+--67410-- REDIR: 0x4019e40 (ld-linux-x86-64.so.2:strlen) redirected to 0x580c7ed5 (???)
+--67410-- REDIR: 0x4019c10 (ld-linux-x86-64.so.2:index) redirected to 0x580c7eef (???)
+--67410-- Reading syms from /usr/libexec/valgrind/vgpreload_core-amd64-linux.so
+--67410-- Reading syms from /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so
+==67410== WARNING: new redirection conflicts with existing -- ignoring it
+--67410--     old: 0x04019e40 (strlen              ) R-> (0000.0) 0x580c7ed5 ???
+--67410--     new: 0x04019e40 (strlen              ) R-> (2007.0) 0x04c2d1b0 strlen
+--67410-- REDIR: 0x4019dc0 (ld-linux-x86-64.so.2:strcmp) redirected to 0x4c2e300 (strcmp)
+--67410-- REDIR: 0x401aa80 (ld-linux-x86-64.so.2:mempcpy) redirected to 0x4c31f90 (mempcpy)
+--67410-- Reading syms from /usr/lib64/libm-2.17.so
+--67410-- Reading syms from /usr/lib64/libc-2.17.so
+--67410-- REDIR: 0x51c91d0 (libc.so.6:strcasecmp) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
+--67410-- REDIR: 0x51c5f40 (libc.so.6:strnlen) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
+--67410-- REDIR: 0x51cb4d0 (libc.so.6:strncasecmp) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
+--67410-- REDIR: 0x51c89a0 (libc.so.6:memset) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
+--67410-- REDIR: 0x51c8950 (libc.so.6:memcpy@GLIBC_2.2.5) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
+--67410-- REDIR: 0x51c7930 (libc.so.6:__GI_strrchr) redirected to 0x4c2cb70 (__GI_strrchr)
+--67410-- REDIR: 0x51be740 (libc.so.6:malloc) redirected to 0x4c29eec (malloc)
+--67410-- REDIR: 0x51dea10 (libc.so.6:__GI_strstr) redirected to 0x4c32220 (__strstr_sse2)
+--67410-- REDIR: 0x51cdc30 (libc.so.6:__GI_memcpy) redirected to 0x4c2efb0 (__GI_memcpy)
+--67410-- REDIR: 0x51beb60 (libc.so.6:free) redirected to 0x4c2afe6 (free)
+--67410-- REDIR: 0x51cf4b0 (libc.so.6:strchrnul) redirected to 0x4c31ab0 (strchrnul)
+--67410-- REDIR: 0x51c8b70 (libc.so.6:__GI_mempcpy) redirected to 0x4c31cc0 (__GI_mempcpy)
+--67410-- REDIR: 0x51cdbc0 (libc.so.6:memcpy@@GLIBC_2.14) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
+--67410-- REDIR: 0x528dc70 (libc.so.6:__memcpy_ssse3_back) redirected to 0x4c2e7b0 (memcpy@@GLIBC_2.14)
+--67410-- REDIR: 0x51c5e60 (libc.so.6:__GI_strlen) redirected to 0x4c2d110 (__GI_strlen)
+==67410== 
+==67410== HEAP SUMMARY:
+==67410==     in use at exit: 12 bytes in 3 blocks
+==67410==   total heap usage: 8 allocs, 5 frees, 1,202 bytes allocated
+==67410== 
+==67410== Searching for pointers to 3 not-freed blocks
+==67410== Checked 90,304 bytes
+==67410== 
+==67410== 4 bytes in 1 blocks are definitely lost in loss record 1 of 3
+==67410==    at 0x4C29F73: malloc (vg_replace_malloc.c:309)
+==67410==    by 0x400F25: load_tensor (in /depot/euge/data/araviki/vsdsquadronmini/verification/upsample/softmax)
+==67410==    by 0x4015BA: main (in /depot/euge/data/araviki/vsdsquadronmini/verification/upsample/softmax)
+==67410== 
+==67410== 4 bytes in 1 blocks are definitely lost in loss record 2 of 3
+==67410==    at 0x4C29F73: malloc (vg_replace_malloc.c:309)
+==67410==    by 0x400F25: load_tensor (in /depot/euge/data/araviki/vsdsquadronmini/verification/upsample/softmax)
+==67410==    by 0x4015D0: main (in /depot/euge/data/araviki/vsdsquadronmini/verification/upsample/softmax)
+==67410== 
+==67410== 4 bytes in 1 blocks are definitely lost in loss record 3 of 3
+==67410==    at 0x4C29F73: malloc (vg_replace_malloc.c:309)
+==67410==    by 0x400B2E: create_tensor (in /depot/euge/data/araviki/vsdsquadronmini/verification/upsample/softmax)
+==67410==    by 0x401329: upsample_nearest (in /depot/euge/data/araviki/vsdsquadronmini/verification/upsample/softmax)
+==67410==    by 0x4015E8: main (in /depot/euge/data/araviki/vsdsquadronmini/verification/upsample/softmax)
+==67410== 
+==67410== LEAK SUMMARY:
+==67410==    definitely lost: 12 bytes in 3 blocks
+==67410==    indirectly lost: 0 bytes in 0 blocks
+==67410==      possibly lost: 0 bytes in 0 blocks
+==67410==    still reachable: 0 bytes in 0 blocks
+==67410==         suppressed: 0 bytes in 0 blocks
+==67410== 
+==67410== ERROR SUMMARY: 3 errors from 3 contexts (suppressed: 0 from 0)

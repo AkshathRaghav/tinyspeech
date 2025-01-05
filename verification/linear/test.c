@@ -104,5 +104,9 @@ int main() {
 
     fprintf(stdout, "Expected mean: %f, Actual mean: %f\n", mean(expected_output.data, expected_output.shape[0] * expected_output.shape[1]), mean(output.data, output.shape[0] * output.shape[1]));
 
+    free(input); 
+    free(output); 
+    free(expected_output); 
+
     return 0; 
 }

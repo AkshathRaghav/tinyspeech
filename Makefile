@@ -6,9 +6,11 @@ SHELL := /bin/bash
 CC = gcc
 CFLAGS = -lm -Wall -Iverification
 
-
+	
 # Paths
-VERIFICATION_DIR = verification
+VERIFICATION_DIR = /depot/euge/data/araviki/vsdsquadronmini/verification
+SUBFOLDERS := $(wildcard $(VERIFICATION_DIR)/*)
+LAYER_NAMES := $(notdir $(SUBFOLDERS))
 
 # Targets
 %.o: %.c
@@ -30,7 +32,17 @@ verify:
 	@cd $(VERIFICATION_DIR)/$(LAYER) && \
 	python3 test.py && \
 	$(CC) test.c -o $(LAYER) $(CFLAGS) && \
-	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --log-file=valgrind-out1.txt ./$(LAYER)
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --log-file=valgrind-out1.txt ./$(LAYER) && \
+	@cd ../..
+
+verify_all: 
+	@$(MAKE) venv
+	@$(foreach LAYER,$(LAYER_NAMES), \
+		cd $(VERIFICATION_DIR)/$(LAYER) && \
+		echo "Running tests in $(LAYER)" && \
+		python3 test.py && \
+		$(CC) test.c -o $(LAYER) $(CFLAGS) && \
+		valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --log-file=valgrind-$(LAYER).txt ./$(LAYER);)
 
 
 .PHONY: lint

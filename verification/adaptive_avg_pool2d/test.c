@@ -5,37 +5,40 @@
 #include "../main.c"
 
 
-void adaptive_avg_pool2d(Tensor *input, Tensor *output) {
-    int8_t batch_size = input->shape[0];
-    int8_t channels = input->shape[1];
-    int8_t height = input->shape[2];
-    int8_t width = input->shape[3];
+Tensor adaptive_avg_pool2d(Tensor *input) {
+    int batch_size = input->shape[0];
+    int channels = input->shape[1];
+    int height = input->shape[2];
+    int width = input->shape[3];
 
     int8_t shape[4] = {batch_size, channels, 1, 1};
-    Tensor output = create_tensor(shape, 4);
+    Tensor output = f_create_tensor(shape, 4);
 
-    for (int8_t n = 0; n < batch_size; n++) {
-        for (int8_t c = 0; c < channels; c++) {
-            int sum = 0;
-            for (int8_t h = 0; h < height; h++) {
-                for (int8_t w = 0; w < width; w++) {
-                    int index = n * (channels * height * width) + c * (height * width) + h * width + w;
-                    sum += input->data[index];
+    for (int n = 0; n < batch_size; n++) {
+        for (int c = 0; c < channels; c++) {
+            float sum = 0.0f;  
+            for (int h = 0; h < height; h++) {
+                for (int w = 0; w < width; w++) {
+                    int index = n * (channels * height * width) + 
+                                c * (height * width) + 
+                                h * width + 
+                                w;
+                    sum += input->f_data[index];
                 }
             }
-            int out_index = n * channels + c;
-            output.data[out_index] = (int8_t*) (sum / (height * width));
+            int out_index = n * channels + c; // Adjust for the output shape
+            output.f_data[out_index] = sum / (height * width);
         }
     }
+
+    return output;
 }
 
+
 int main() {
-    Tensor input = load_tensor("input_tensor.bin", 4);
-    print_tensor(&input);
-    Tensor expected_output = load_tensor("output_tensor.bin", 4);
-    print_tensor(&expected_output);
+    Tensor input = f_load_tensor("./input_tensor.bin", 4);
+    Tensor expected_output = f_load_tensor("./output_tensor.bin", 4);
     Tensor output = adaptive_avg_pool2d(&input);
-    print_tensor(&output);
 
     confirm_equal(&output, &expected_output);
 
@@ -45,3 +48,4 @@ int main() {
 
     return 0;
 }
+

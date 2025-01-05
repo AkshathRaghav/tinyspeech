@@ -32,7 +32,5 @@ if __name__ == "__main__":
         softmax_layer = nn.Softmax(dim=1)
         output_tensor = softmax_layer(input_tensor)
 
-    print(output_tensor)
-
     save_tensor(input_tensor.detach().numpy(), "./input_tensor.bin")
     save_tensor_f(output_tensor.detach().numpy(), "./output_tensor.bin")

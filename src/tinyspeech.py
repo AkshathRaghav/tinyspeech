@@ -38,7 +38,7 @@ class QTinySpeechZ(nn.Module):
         x = self.global_pool(x)  
         x = x.view(x.size(0), -1)  
         x = self.fc(x)  
-        return x
+        return self.softmax(x)
 
 # ---- 
 # w/o Quant
@@ -74,8 +74,8 @@ class TinySpeechZZ(nn.Module):
         x = self.global_pool(x)  
         x = x.view(x.size(0), -1)  
         x = self.fc(x)  
-            
-        return x
+        return self.softmax(x)
+
 
 
 class TinySpeechZ(nn.Module): 
@@ -112,9 +112,8 @@ class TinySpeechZ(nn.Module):
         x = F.relu(self.conv2(x))  
         x = self.global_pool(x)  
         x = x.view(x.size(0), -1)  
-        x = self.fc(x)  
+        return self.softmax(x)
 
-        return x
     
 # torch.Size([1, 1, 32, 32])
 # torch.Size([1, 7, 32, 32])

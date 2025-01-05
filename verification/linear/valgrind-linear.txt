@@ -1,0 +1,109 @@
+==72709== Memcheck, a memory error detector
+==72709== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==72709== Using Valgrind-3.15.0-608cb11914-20190413 and LibVEX; rerun with -h for copyright info
+==72709== Command: ./linear
+==72709== Parent PID: 71268
+==72709== 
+--72709-- 
+--72709-- Valgrind options:
+--72709--    --leak-check=full
+--72709--    --show-leak-kinds=all
+--72709--    --track-origins=yes
+--72709--    --verbose
+--72709--    --log-file=valgrind-linear.txt
+--72709-- Contents of /proc/version:
+--72709--   Linux version 3.10.0-1160.108.1.el7.x86_64 (mockbuild@kbuilder.bsys.centos.org) (gcc version 4.8.5 20150623 (Red Hat 4.8.5-44) (GCC) ) #1 SMP Thu Jan 25 16:17:31 UTC 2024
+--72709-- 
+--72709-- Arch and hwcaps: AMD64, LittleEndian, amd64-cx16-lzcnt-rdtscp-sse3-ssse3-avx-avx2-bmi-f16c-rdrand
+--72709-- Page sizes: currently 4096, max supported 4096
+--72709-- Valgrind library directory: /usr/libexec/valgrind
+--72709-- Reading syms from /depot/euge/data/araviki/vsdsquadronmini/verification/linear/linear
+--72709-- Reading syms from /usr/lib64/ld-2.17.so
+--72709-- Reading syms from /usr/libexec/valgrind/memcheck-amd64-linux
+--72709--    object doesn't have a symbol table
+--72709--    object doesn't have a dynamic symbol table
+--72709-- Scheduler: using generic scheduler lock implementation.
+--72709-- Reading suppressions file: /usr/libexec/valgrind/default.supp
+==72709== embedded gdbserver: reading from /tmp/vgdb-pipe-from-vgdb-to-72709-by-araviki-on-gilbreth-fe00.rcac.purdue.edu
+==72709== embedded gdbserver: writing to   /tmp/vgdb-pipe-to-vgdb-from-72709-by-araviki-on-gilbreth-fe00.rcac.purdue.edu
+==72709== embedded gdbserver: shared mem   /tmp/vgdb-pipe-shared-mem-vgdb-72709-by-araviki-on-gilbreth-fe00.rcac.purdue.edu
+==72709== 
+==72709== TO CONTROL THIS PROCESS USING vgdb (which you probably
+==72709== don't want to do, unless you know exactly what you're doing,
+==72709== or are doing some strange experiment):
+==72709==   /usr/libexec/valgrind/../../bin/vgdb --pid=72709 ...command...
+==72709== 
+==72709== TO DEBUG THIS PROCESS USING GDB: start GDB like this
+==72709==   /path/to/gdb ./linear
+==72709== and then give GDB the following command
+==72709==   target remote | /usr/libexec/valgrind/../../bin/vgdb --pid=72709
+==72709== --pid is optional if only one valgrind process is running
+==72709== 
+--72709-- REDIR: 0x4019e40 (ld-linux-x86-64.so.2:strlen) redirected to 0x580c7ed5 (???)
+--72709-- REDIR: 0x4019c10 (ld-linux-x86-64.so.2:index) redirected to 0x580c7eef (???)
+--72709-- Reading syms from /usr/libexec/valgrind/vgpreload_core-amd64-linux.so
+--72709-- Reading syms from /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so
+==72709== WARNING: new redirection conflicts with existing -- ignoring it
+--72709--     old: 0x04019e40 (strlen              ) R-> (0000.0) 0x580c7ed5 ???
+--72709--     new: 0x04019e40 (strlen              ) R-> (2007.0) 0x04c2d1b0 strlen
+--72709-- REDIR: 0x4019dc0 (ld-linux-x86-64.so.2:strcmp) redirected to 0x4c2e300 (strcmp)
+--72709-- REDIR: 0x401aa80 (ld-linux-x86-64.so.2:mempcpy) redirected to 0x4c31f90 (mempcpy)
+--72709-- Reading syms from /usr/lib64/libm-2.17.so
+--72709-- Reading syms from /usr/lib64/libc-2.17.so
+--72709-- REDIR: 0x51c91d0 (libc.so.6:strcasecmp) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
+--72709-- REDIR: 0x51c5f40 (libc.so.6:strnlen) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
+--72709-- REDIR: 0x51cb4d0 (libc.so.6:strncasecmp) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
+--72709-- REDIR: 0x51c89a0 (libc.so.6:memset) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
+--72709-- REDIR: 0x51c8950 (libc.so.6:memcpy@GLIBC_2.2.5) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
+--72709-- REDIR: 0x51c7930 (libc.so.6:__GI_strrchr) redirected to 0x4c2cb70 (__GI_strrchr)
+--72709-- REDIR: 0x51be740 (libc.so.6:malloc) redirected to 0x4c29eec (malloc)
+--72709-- REDIR: 0x51dea10 (libc.so.6:__GI_strstr) redirected to 0x4c32220 (__strstr_sse2)
+--72709-- REDIR: 0x51cdc30 (libc.so.6:__GI_memcpy) redirected to 0x4c2efb0 (__GI_memcpy)
+--72709-- REDIR: 0x51beb60 (libc.so.6:free) redirected to 0x4c2afe6 (free)
+--72709-- REDIR: 0x51cf4b0 (libc.so.6:strchrnul) redirected to 0x4c31ab0 (strchrnul)
+--72709-- REDIR: 0x51c8b70 (libc.so.6:__GI_mempcpy) redirected to 0x4c31cc0 (__GI_mempcpy)
+--72709-- REDIR: 0x51cdbc0 (libc.so.6:memcpy@@GLIBC_2.14) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
+--72709-- REDIR: 0x528dc70 (libc.so.6:__memcpy_ssse3_back) redirected to 0x4c2e7b0 (memcpy@@GLIBC_2.14)
+--72709-- REDIR: 0x51c5e60 (libc.so.6:__GI_strlen) redirected to 0x4c2d110 (__GI_strlen)
+==72709== 
+==72709== HEAP SUMMARY:
+==72709==     in use at exit: 688 bytes in 5 blocks
+==72709==   total heap usage: 11 allocs, 6 frees, 2,540 bytes allocated
+==72709== 
+==72709== Searching for pointers to 5 not-freed blocks
+==72709== Checked 90,320 bytes
+==72709== 
+==72709== 2 bytes in 1 blocks are definitely lost in loss record 1 of 5
+==72709==    at 0x4C29F73: malloc (vg_replace_malloc.c:309)
+==72709==    by 0x400E8D: f_load_tensor (in /depot/euge/data/araviki/vsdsquadronmini/verification/linear/linear)
+==72709==    by 0x401A9A: main (in /depot/euge/data/araviki/vsdsquadronmini/verification/linear/linear)
+==72709== 
+==72709== 2 bytes in 1 blocks are definitely lost in loss record 2 of 5
+==72709==    at 0x4C29F73: malloc (vg_replace_malloc.c:309)
+==72709==    by 0x400E8D: f_load_tensor (in /depot/euge/data/araviki/vsdsquadronmini/verification/linear/linear)
+==72709==    by 0x401AB0: main (in /depot/euge/data/araviki/vsdsquadronmini/verification/linear/linear)
+==72709== 
+==72709== 2 bytes in 1 blocks are definitely lost in loss record 3 of 5
+==72709==    at 0x4C29F73: malloc (vg_replace_malloc.c:309)
+==72709==    by 0x400E8D: f_load_tensor (in /depot/euge/data/araviki/vsdsquadronmini/verification/linear/linear)
+==72709==    by 0x401AC6: main (in /depot/euge/data/araviki/vsdsquadronmini/verification/linear/linear)
+==72709== 
+==72709== 2 bytes in 1 blocks are definitely lost in loss record 4 of 5
+==72709==    at 0x4C29F73: malloc (vg_replace_malloc.c:309)
+==72709==    by 0x400BA6: f_create_tensor (in /depot/euge/data/araviki/vsdsquadronmini/verification/linear/linear)
+==72709==    by 0x401968: fc_layer (in /depot/euge/data/araviki/vsdsquadronmini/verification/linear/linear)
+==72709==    by 0x401ADD: main (in /depot/euge/data/araviki/vsdsquadronmini/verification/linear/linear)
+==72709== 
+==72709== 680 bytes in 1 blocks are definitely lost in loss record 5 of 5
+==72709==    at 0x4C29F73: malloc (vg_replace_malloc.c:309)
+==72709==    by 0x400FA9: f_load_tensor (in /depot/euge/data/araviki/vsdsquadronmini/verification/linear/linear)
+==72709==    by 0x401AB0: main (in /depot/euge/data/araviki/vsdsquadronmini/verification/linear/linear)
+==72709== 
+==72709== LEAK SUMMARY:
+==72709==    definitely lost: 688 bytes in 5 blocks
+==72709==    indirectly lost: 0 bytes in 0 blocks
+==72709==      possibly lost: 0 bytes in 0 blocks
+==72709==    still reachable: 0 bytes in 0 blocks
+==72709==         suppressed: 0 bytes in 0 blocks
+==72709== 
+==72709== ERROR SUMMARY: 5 errors from 5 contexts (suppressed: 0 from 0)

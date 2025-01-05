@@ -42,11 +42,11 @@ Tensor softmax(Tensor *input) {
 
 int main() {
     Tensor input = load_tensor("input_tensor.bin", 2);
-    print_tensor(&input);
+    // print_tensor(&input);
     Tensor expected_output = f_load_tensor("output_tensor.bin", 2);
-    f_print_tensor(&expected_output);
+    // f_print_tensor(&expected_output);
     Tensor output = softmax(&input);
-    f_print_tensor(&output);
+    // f_print_tensor(&output);
 
     confirm_equal(&output, &expected_output);
 

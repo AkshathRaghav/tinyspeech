@@ -26,12 +26,6 @@ if __name__ == "__main__":
         input_tensor = input_tensor.view(1, 1, 4, 4) 
         output_tensor = maxpool_layer(input_tensor)
 
-    print(input_tensor.shape)
-    print(output_tensor.shape)
-
-    print(output_tensor)
-
     save_tensor_custom(input_tensor.detach().numpy(), "./input_tensor.bin")
     save_tensor_custom(output_tensor.detach().numpy(), "./output_tensor.bin")
 
-    print('done')

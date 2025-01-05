@@ -18,11 +18,13 @@ LAYER_NAMES := $(notdir $(SUBFOLDERS))
 
 venv: . ./.venv/bin/activate.csh
 
-clean:
-	@find $(VERIFICATION_DIR) -name "*.o" -delete
-	@find $(VERIFICATION_DIR) -name "$(LAYER)" -delete
-	@find $(VERIFICATION_DIR) -name "valgrind-out1.txt" -delete
 
+.PHONY: clean
+clean:
+	@$(foreach DIR, $(SUBFOLDERS), \
+		echo "Cleaning directory: $(DIR)" && \
+		rm -f $(DIR)/*.bin $(DIR)/*.txt $(DIR)/*.o $(DIR)/*.out;)
+		
 verify:
 	@if [ -z "$(LAYER)" ]; then \
 		echo "Error: LAYER variable is not set. Please specify a layer to verify."; \

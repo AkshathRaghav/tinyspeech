@@ -1,125 +1,119 @@
-==81067== Memcheck, a memory error detector
-==81067== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
-==81067== Using Valgrind-3.15.0-608cb11914-20190413 and LibVEX; rerun with -h for copyright info
-==81067== Command: ./test
-==81067== Parent PID: 106191
-==81067== 
---81067-- 
---81067-- Valgrind options:
---81067--    --leak-check=full
---81067--    --show-leak-kinds=all
---81067--    --track-origins=yes
---81067--    --verbose
---81067--    --log-file=valgrind-out1.txt
---81067-- Contents of /proc/version:
---81067--   Linux version 3.10.0-1160.108.1.el7.x86_64 (mockbuild@kbuilder.bsys.centos.org) (gcc version 4.8.5 20150623 (Red Hat 4.8.5-44) (GCC) ) #1 SMP Thu Jan 25 16:17:31 UTC 2024
---81067-- 
---81067-- Arch and hwcaps: AMD64, LittleEndian, amd64-cx16-lzcnt-rdtscp-sse3-ssse3-avx-avx2-bmi-f16c-rdrand
---81067-- Page sizes: currently 4096, max supported 4096
---81067-- Valgrind library directory: /usr/libexec/valgrind
---81067-- Reading syms from /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test
---81067-- Reading syms from /usr/lib64/ld-2.17.so
---81067-- Reading syms from /usr/libexec/valgrind/memcheck-amd64-linux
---81067--    object doesn't have a symbol table
---81067--    object doesn't have a dynamic symbol table
---81067-- Scheduler: using generic scheduler lock implementation.
---81067-- Reading suppressions file: /usr/libexec/valgrind/default.supp
-==81067== embedded gdbserver: reading from /tmp/vgdb-pipe-from-vgdb-to-81067-by-araviki-on-gilbreth-fe03.rcac.purdue.edu
-==81067== embedded gdbserver: writing to   /tmp/vgdb-pipe-to-vgdb-from-81067-by-araviki-on-gilbreth-fe03.rcac.purdue.edu
-==81067== embedded gdbserver: shared mem   /tmp/vgdb-pipe-shared-mem-vgdb-81067-by-araviki-on-gilbreth-fe03.rcac.purdue.edu
-==81067== 
-==81067== TO CONTROL THIS PROCESS USING vgdb (which you probably
-==81067== don't want to do, unless you know exactly what you're doing,
-==81067== or are doing some strange experiment):
-==81067==   /usr/libexec/valgrind/../../bin/vgdb --pid=81067 ...command...
-==81067== 
-==81067== TO DEBUG THIS PROCESS USING GDB: start GDB like this
-==81067==   /path/to/gdb ./test
-==81067== and then give GDB the following command
-==81067==   target remote | /usr/libexec/valgrind/../../bin/vgdb --pid=81067
-==81067== --pid is optional if only one valgrind process is running
-==81067== 
---81067-- REDIR: 0x4019e40 (ld-linux-x86-64.so.2:strlen) redirected to 0x580c7ed5 (???)
---81067-- REDIR: 0x4019c10 (ld-linux-x86-64.so.2:index) redirected to 0x580c7eef (???)
---81067-- Reading syms from /usr/libexec/valgrind/vgpreload_core-amd64-linux.so
---81067-- Reading syms from /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so
-==81067== WARNING: new redirection conflicts with existing -- ignoring it
---81067--     old: 0x04019e40 (strlen              ) R-> (0000.0) 0x580c7ed5 ???
---81067--     new: 0x04019e40 (strlen              ) R-> (2007.0) 0x04c2d1b0 strlen
---81067-- REDIR: 0x4019dc0 (ld-linux-x86-64.so.2:strcmp) redirected to 0x4c2e300 (strcmp)
---81067-- REDIR: 0x401aa80 (ld-linux-x86-64.so.2:mempcpy) redirected to 0x4c31f90 (mempcpy)
---81067-- Reading syms from /usr/lib64/libm-2.17.so
---81067-- Reading syms from /usr/lib64/libc-2.17.so
---81067-- REDIR: 0x51c91d0 (libc.so.6:strcasecmp) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
---81067-- REDIR: 0x51c5f40 (libc.so.6:strnlen) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
---81067-- REDIR: 0x51cb4d0 (libc.so.6:strncasecmp) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
---81067-- REDIR: 0x51c89a0 (libc.so.6:memset) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
---81067-- REDIR: 0x51c8950 (libc.so.6:memcpy@GLIBC_2.2.5) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
---81067-- REDIR: 0x51c7930 (libc.so.6:__GI_strrchr) redirected to 0x4c2cb70 (__GI_strrchr)
---81067-- REDIR: 0x51be740 (libc.so.6:malloc) redirected to 0x4c29eec (malloc)
---81067-- REDIR: 0x51dea10 (libc.so.6:__GI_strstr) redirected to 0x4c32220 (__strstr_sse2)
---81067-- REDIR: 0x51cdc30 (libc.so.6:__GI_memcpy) redirected to 0x4c2efb0 (__GI_memcpy)
---81067-- REDIR: 0x51beb60 (libc.so.6:free) redirected to 0x4c2afe6 (free)
---81067-- REDIR: 0x51cf4b0 (libc.so.6:strchrnul) redirected to 0x4c31ab0 (strchrnul)
---81067-- REDIR: 0x51c8b70 (libc.so.6:__GI_mempcpy) redirected to 0x4c31cc0 (__GI_mempcpy)
---81067-- REDIR: 0x51cdbc0 (libc.so.6:memcpy@@GLIBC_2.14) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
---81067-- REDIR: 0x528dc70 (libc.so.6:__memcpy_ssse3_back) redirected to 0x4c2e7b0 (memcpy@@GLIBC_2.14)
---81067-- REDIR: 0x51c5e60 (libc.so.6:__GI_strlen) redirected to 0x4c2d110 (__GI_strlen)
-==81067== 
-==81067== HEAP SUMMARY:
-==81067==     in use at exit: 91 bytes in 8 blocks
-==81067==   total heap usage: 20 allocs, 12 frees, 3,697 bytes allocated
-==81067== 
-==81067== Searching for pointers to 8 not-freed blocks
-==81067== Checked 90,240 bytes
-==81067== 
-==81067== 1 bytes in 1 blocks are definitely lost in loss record 1 of 8
-==81067==    at 0x4C29F73: malloc (vg_replace_malloc.c:309)
-==81067==    by 0x401004: f_load_tensor (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
-==81067==    by 0x401C8B: main (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
-==81067== 
-==81067== 1 bytes in 1 blocks are definitely lost in loss record 2 of 8
-==81067==    at 0x4C29F73: malloc (vg_replace_malloc.c:309)
-==81067==    by 0x401004: f_load_tensor (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
-==81067==    by 0x401CA1: main (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
-==81067== 
-==81067== 1 bytes in 1 blocks are definitely lost in loss record 3 of 8
-==81067==    at 0x4C29F73: malloc (vg_replace_malloc.c:309)
-==81067==    by 0x401004: f_load_tensor (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
-==81067==    by 0x401CB7: main (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
-==81067== 
-==81067== 1 bytes in 1 blocks are definitely lost in loss record 4 of 8
-==81067==    at 0x4C29F73: malloc (vg_replace_malloc.c:309)
-==81067==    by 0x401004: f_load_tensor (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
-==81067==    by 0x401CD0: main (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
-==81067== 
-==81067== 4 bytes in 1 blocks are definitely lost in loss record 5 of 8
-==81067==    at 0x4C29F73: malloc (vg_replace_malloc.c:309)
-==81067==    by 0x401239: load_tensor (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
-==81067==    by 0x401C75: main (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
-==81067== 
-==81067== 4 bytes in 1 blocks are definitely lost in loss record 6 of 8
-==81067==    at 0x4C29F73: malloc (vg_replace_malloc.c:309)
-==81067==    by 0x401239: load_tensor (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
-==81067==    by 0x401CE9: main (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
-==81067== 
-==81067== 4 bytes in 1 blocks are definitely lost in loss record 7 of 8
-==81067==    at 0x4C29F73: malloc (vg_replace_malloc.c:309)
-==81067==    by 0x400DB2: create_tensor (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
-==81067==    by 0x401AEB: batchnorm2d (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
-==81067==    by 0x401D0B: main (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
-==81067== 
-==81067== 75 bytes in 1 blocks are definitely lost in loss record 8 of 8
-==81067==    at 0x4C29F73: malloc (vg_replace_malloc.c:309)
-==81067==    by 0x400E8F: create_tensor (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
-==81067==    by 0x401AEB: batchnorm2d (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
-==81067==    by 0x401D0B: main (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
-==81067== 
-==81067== LEAK SUMMARY:
-==81067==    definitely lost: 91 bytes in 8 blocks
-==81067==    indirectly lost: 0 bytes in 0 blocks
-==81067==      possibly lost: 0 bytes in 0 blocks
-==81067==    still reachable: 0 bytes in 0 blocks
-==81067==         suppressed: 0 bytes in 0 blocks
-==81067== 
-==81067== ERROR SUMMARY: 8 errors from 8 contexts (suppressed: 0 from 0)
+==51939== Memcheck, a memory error detector
+==51939== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==51939== Using Valgrind-3.15.0-608cb11914-20190413 and LibVEX; rerun with -h for copyright info
+==51939== Command: ./test
+==51939== Parent PID: 106191
+==51939== 
+--51939-- 
+--51939-- Valgrind options:
+--51939--    --leak-check=full
+--51939--    --show-leak-kinds=all
+--51939--    --track-origins=yes
+--51939--    --verbose
+--51939--    --log-file=valgrind-out1.txt
+--51939-- Contents of /proc/version:
+--51939--   Linux version 3.10.0-1160.108.1.el7.x86_64 (mockbuild@kbuilder.bsys.centos.org) (gcc version 4.8.5 20150623 (Red Hat 4.8.5-44) (GCC) ) #1 SMP Thu Jan 25 16:17:31 UTC 2024
+--51939-- 
+--51939-- Arch and hwcaps: AMD64, LittleEndian, amd64-cx16-lzcnt-rdtscp-sse3-ssse3-avx-avx2-bmi-f16c-rdrand
+--51939-- Page sizes: currently 4096, max supported 4096
+--51939-- Valgrind library directory: /usr/libexec/valgrind
+--51939-- Reading syms from /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test
+--51939-- Reading syms from /usr/lib64/ld-2.17.so
+--51939-- Reading syms from /usr/libexec/valgrind/memcheck-amd64-linux
+--51939--    object doesn't have a symbol table
+--51939--    object doesn't have a dynamic symbol table
+--51939-- Scheduler: using generic scheduler lock implementation.
+--51939-- Reading suppressions file: /usr/libexec/valgrind/default.supp
+==51939== embedded gdbserver: reading from /tmp/vgdb-pipe-from-vgdb-to-51939-by-araviki-on-gilbreth-fe03.rcac.purdue.edu
+==51939== embedded gdbserver: writing to   /tmp/vgdb-pipe-to-vgdb-from-51939-by-araviki-on-gilbreth-fe03.rcac.purdue.edu
+==51939== embedded gdbserver: shared mem   /tmp/vgdb-pipe-shared-mem-vgdb-51939-by-araviki-on-gilbreth-fe03.rcac.purdue.edu
+==51939== 
+==51939== TO CONTROL THIS PROCESS USING vgdb (which you probably
+==51939== don't want to do, unless you know exactly what you're doing,
+==51939== or are doing some strange experiment):
+==51939==   /usr/libexec/valgrind/../../bin/vgdb --pid=51939 ...command...
+==51939== 
+==51939== TO DEBUG THIS PROCESS USING GDB: start GDB like this
+==51939==   /path/to/gdb ./test
+==51939== and then give GDB the following command
+==51939==   target remote | /usr/libexec/valgrind/../../bin/vgdb --pid=51939
+==51939== --pid is optional if only one valgrind process is running
+==51939== 
+--51939-- REDIR: 0x4019e40 (ld-linux-x86-64.so.2:strlen) redirected to 0x580c7ed5 (???)
+--51939-- REDIR: 0x4019c10 (ld-linux-x86-64.so.2:index) redirected to 0x580c7eef (???)
+--51939-- Reading syms from /usr/libexec/valgrind/vgpreload_core-amd64-linux.so
+--51939-- Reading syms from /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so
+==51939== WARNING: new redirection conflicts with existing -- ignoring it
+--51939--     old: 0x04019e40 (strlen              ) R-> (0000.0) 0x580c7ed5 ???
+--51939--     new: 0x04019e40 (strlen              ) R-> (2007.0) 0x04c2d1b0 strlen
+--51939-- REDIR: 0x4019dc0 (ld-linux-x86-64.so.2:strcmp) redirected to 0x4c2e300 (strcmp)
+--51939-- REDIR: 0x401aa80 (ld-linux-x86-64.so.2:mempcpy) redirected to 0x4c31f90 (mempcpy)
+--51939-- Reading syms from /usr/lib64/libm-2.17.so
+--51939-- Reading syms from /usr/lib64/libc-2.17.so
+--51939-- REDIR: 0x51c91d0 (libc.so.6:strcasecmp) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
+--51939-- REDIR: 0x51c5f40 (libc.so.6:strnlen) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
+--51939-- REDIR: 0x51cb4d0 (libc.so.6:strncasecmp) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
+--51939-- REDIR: 0x51c89a0 (libc.so.6:memset) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
+--51939-- REDIR: 0x51c8950 (libc.so.6:memcpy@GLIBC_2.2.5) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
+--51939-- REDIR: 0x51c7930 (libc.so.6:__GI_strrchr) redirected to 0x4c2cb70 (__GI_strrchr)
+--51939-- REDIR: 0x51be740 (libc.so.6:malloc) redirected to 0x4c29eec (malloc)
+--51939-- REDIR: 0x51dea10 (libc.so.6:__GI_strstr) redirected to 0x4c32220 (__strstr_sse2)
+--51939-- REDIR: 0x51cdc30 (libc.so.6:__GI_memcpy) redirected to 0x4c2efb0 (__GI_memcpy)
+--51939-- REDIR: 0x51beb60 (libc.so.6:free) redirected to 0x4c2afe6 (free)
+--51939-- REDIR: 0x51cf4b0 (libc.so.6:strchrnul) redirected to 0x4c31ab0 (strchrnul)
+--51939-- REDIR: 0x51c8b70 (libc.so.6:__GI_mempcpy) redirected to 0x4c31cc0 (__GI_mempcpy)
+--51939-- REDIR: 0x51cdbc0 (libc.so.6:memcpy@@GLIBC_2.14) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
+--51939-- REDIR: 0x528dc70 (libc.so.6:__memcpy_ssse3_back) redirected to 0x4c2e7b0 (memcpy@@GLIBC_2.14)
+--51939-- REDIR: 0x51c5e60 (libc.so.6:__GI_strlen) redirected to 0x4c2d110 (__GI_strlen)
+==51939== 
+==51939== HEAP SUMMARY:
+==51939==     in use at exit: 16 bytes in 7 blocks
+==51939==   total heap usage: 20 allocs, 13 frees, 3,697 bytes allocated
+==51939== 
+==51939== Searching for pointers to 7 not-freed blocks
+==51939== Checked 90,240 bytes
+==51939== 
+==51939== 1 bytes in 1 blocks are definitely lost in loss record 1 of 7
+==51939==    at 0x4C29F73: malloc (vg_replace_malloc.c:309)
+==51939==    by 0x401085: f_load_tensor (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
+==51939==    by 0x401CFD: main (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
+==51939== 
+==51939== 1 bytes in 1 blocks are definitely lost in loss record 2 of 7
+==51939==    at 0x4C29F73: malloc (vg_replace_malloc.c:309)
+==51939==    by 0x401085: f_load_tensor (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
+==51939==    by 0x401D13: main (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
+==51939== 
+==51939== 1 bytes in 1 blocks are definitely lost in loss record 3 of 7
+==51939==    at 0x4C29F73: malloc (vg_replace_malloc.c:309)
+==51939==    by 0x401085: f_load_tensor (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
+==51939==    by 0x401D29: main (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
+==51939== 
+==51939== 1 bytes in 1 blocks are definitely lost in loss record 4 of 7
+==51939==    at 0x4C29F73: malloc (vg_replace_malloc.c:309)
+==51939==    by 0x401085: f_load_tensor (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
+==51939==    by 0x401D42: main (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
+==51939== 
+==51939== 4 bytes in 1 blocks are definitely lost in loss record 5 of 7
+==51939==    at 0x4C29F73: malloc (vg_replace_malloc.c:309)
+==51939==    by 0x4012BA: load_tensor (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
+==51939==    by 0x401CE7: main (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
+==51939== 
+==51939== 4 bytes in 1 blocks are definitely lost in loss record 6 of 7
+==51939==    at 0x4C29F73: malloc (vg_replace_malloc.c:309)
+==51939==    by 0x4012BA: load_tensor (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
+==51939==    by 0x401D5B: main (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
+==51939== 
+==51939== 4 bytes in 1 blocks are definitely lost in loss record 7 of 7
+==51939==    at 0x4C29F73: malloc (vg_replace_malloc.c:309)
+==51939==    by 0x400E33: create_tensor (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
+==51939==    by 0x401B19: batchnorm2d (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
+==51939==    by 0x401D87: main (in /depot/euge/data/araviki/vsdsquadronmini/verification/batchnorm/test)
+==51939== 
+==51939== LEAK SUMMARY:
+==51939==    definitely lost: 16 bytes in 7 blocks
+==51939==    indirectly lost: 0 bytes in 0 blocks
+==51939==      possibly lost: 0 bytes in 0 blocks
+==51939==    still reachable: 0 bytes in 0 blocks
+==51939==         suppressed: 0 bytes in 0 blocks
+==51939== 
+==51939== ERROR SUMMARY: 7 errors from 7 contexts (suppressed: 0 from 0)

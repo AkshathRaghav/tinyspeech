@@ -19,16 +19,17 @@ def f_save_tensor(tensor, filename):
 if __name__ == "__main__":
     input_tensor = torch.randint(-15, 15, (1, 3, 5, 5), dtype=torch.float32)
     batchnorm_layer = nn.BatchNorm2d(num_features=3)
-    batchnorm_layer.weight.data = batchnorm_layer.weight.data * 10
 
-    with torch.no_grad():
-        output_tensor = batchnorm_layer(input_tensor)
-
-    save_tensor(input_tensor.detach().numpy(), "./input_tensor.bin")
     f_save_tensor(batchnorm_layer.running_mean.detach().numpy(), "./mean.bin")
     f_save_tensor(batchnorm_layer.running_var.detach().numpy(), "./variance.bin")
     f_save_tensor(batchnorm_layer.weight.detach().numpy(), "./gamma.bin")
     f_save_tensor(batchnorm_layer.bias.detach().numpy(), "./beta.bin")
+    
+    # Piece of shit layer uses running statistics WHICH DO GET UPDATED within no_grad=True.
+    with torch.no_grad(): 
+        output_tensor = batchnorm_layer(input_tensor)
+
+    save_tensor(input_tensor.detach().numpy(), "./input_tensor.bin")
     save_tensor(output_tensor.detach().numpy(), "./output_tensor.bin")
 
     # print("Input Tensor:")

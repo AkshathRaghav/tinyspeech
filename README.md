@@ -41,6 +41,12 @@ python train.py --save_pth "models" --quant --quant_type 8 --model_type Z --epoc
 python train.py --config tinyspeechz_google_speech.yaml
 ```
 
+### Inference 
+
+All the layers required to run the model are specified in the `./verification` folder. Under this, you will find sub-folders for all the layers with a `.c` and `.py` file. First, we generate a tensor and run it against a layer/activation function used in `./src/tinyspeech.py` or `./src/modules.py`. Then, we saved this in the form of a `int8` or `float` binary, which is subsequently loaded into C for testing with the custom code. 
+
+You can test all the layers by running `make verify_all` when in the `./` root directory of the project. 
+
 # Remarks
 
 Run `python -m torch.utils.bottleneck train.py --config <your_config_yaml>` to evaluate efficiency when training. 

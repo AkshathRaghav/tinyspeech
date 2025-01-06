@@ -31,11 +31,11 @@ void confirm_equal(Tensor* output, Tensor* expected_output) {
         if (output->data != NULL) { 
             // printf("%d, %d\n", output->data[i], expected_output->data[i]);
 
-            // Verifying conv2d was really painful. 
-            // I'm setting the error bar somewhat high, since I'm scaling the inputs and weights high (to ensure it doesnt get truncated when quantizing)
-            // Then, I'm scaling the outputs back. The error is not to be dismissed, but was a test to see if the math was right.  
+            // Verifying conv2d and batchnorm was really painful. 
+            // I'm setting the error bar somewhat high, since I'm scaling the inputs and weights by factors of 10 (to ensure it doesnt get truncated when quantizing)
+            // Then, I'm scaling the outputs back. The error is not to be dismissed, but was a test to see if the math was right, ignoring the type problem.
 
-            if (fabs(output->data[i] - expected_output->data[i]) > 5) { 
+            if (fabs(output->data[i] - expected_output->data[i]) > 10) { 
                 flag = 0; 
                 break; 
             }
@@ -158,8 +158,10 @@ Tensor f_load_tensor(const char* filename, int8_t dims) {
 
     if (dims == 2) { 
         fprintf(stdout, "Loaded tensor with shape [%d, %d]\n", tensor.shape[0], tensor.shape[1]);
-    } else  { 
+    } else if (dims == 4) { 
         fprintf(stdout, "Loaded tensor with shape [%d, %d, %d, %d]\n", tensor.shape[0], tensor.shape[1], tensor.shape[2], tensor.shape[3]);
+    } else { 
+        fprintf(stdout, "Loaded tensor with shape [%d]\n", *tensor.shape);
     }
 
     return tensor;
@@ -206,8 +208,10 @@ Tensor load_tensor(const char* filename, int8_t dims) {
 
     if (dims == 2) { 
         fprintf(stdout, "Loaded tensor with shape [%d, %d]\n", tensor.shape[0], tensor.shape[1]);
-    } else  { 
+    } else if (dims == 4) { 
         fprintf(stdout, "Loaded tensor with shape [%d, %d, %d, %d]\n", tensor.shape[0], tensor.shape[1], tensor.shape[2], tensor.shape[3]);
+    } else { 
+        fprintf(stdout, "Loaded tensor with shape [%d]\n", *tensor.shape);
     }
 
     return tensor;

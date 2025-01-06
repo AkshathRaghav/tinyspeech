@@ -1,0 +1,99 @@
+==84929== Memcheck, a memory error detector
+==84929== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==84929== Using Valgrind-3.15.0-608cb11914-20190413 and LibVEX; rerun with -h for copyright info
+==84929== Command: ./test
+==84929== Parent PID: 82754
+==84929== 
+--84929-- 
+--84929-- Valgrind options:
+--84929--    --leak-check=full
+--84929--    --show-leak-kinds=all
+--84929--    --track-origins=yes
+--84929--    --verbose
+--84929--    --log-file=valgrind-softmax.txt
+--84929-- Contents of /proc/version:
+--84929--   Linux version 3.10.0-1160.108.1.el7.x86_64 (mockbuild@kbuilder.bsys.centos.org) (gcc version 4.8.5 20150623 (Red Hat 4.8.5-44) (GCC) ) #1 SMP Thu Jan 25 16:17:31 UTC 2024
+--84929-- 
+--84929-- Arch and hwcaps: AMD64, LittleEndian, amd64-cx16-lzcnt-rdtscp-sse3-ssse3-avx-avx2-bmi-f16c-rdrand
+--84929-- Page sizes: currently 4096, max supported 4096
+--84929-- Valgrind library directory: /usr/libexec/valgrind
+--84929-- Reading syms from /depot/euge/data/araviki/vsdsquadronmini/verification/softmax/test
+--84929-- Reading syms from /usr/lib64/ld-2.17.so
+--84929-- Reading syms from /usr/libexec/valgrind/memcheck-amd64-linux
+--84929--    object doesn't have a symbol table
+--84929--    object doesn't have a dynamic symbol table
+--84929-- Scheduler: using generic scheduler lock implementation.
+--84929-- Reading suppressions file: /usr/libexec/valgrind/default.supp
+==84929== embedded gdbserver: reading from /tmp/vgdb-pipe-from-vgdb-to-84929-by-araviki-on-gilbreth-fe03.rcac.purdue.edu
+==84929== embedded gdbserver: writing to   /tmp/vgdb-pipe-to-vgdb-from-84929-by-araviki-on-gilbreth-fe03.rcac.purdue.edu
+==84929== embedded gdbserver: shared mem   /tmp/vgdb-pipe-shared-mem-vgdb-84929-by-araviki-on-gilbreth-fe03.rcac.purdue.edu
+==84929== 
+==84929== TO CONTROL THIS PROCESS USING vgdb (which you probably
+==84929== don't want to do, unless you know exactly what you're doing,
+==84929== or are doing some strange experiment):
+==84929==   /usr/libexec/valgrind/../../bin/vgdb --pid=84929 ...command...
+==84929== 
+==84929== TO DEBUG THIS PROCESS USING GDB: start GDB like this
+==84929==   /path/to/gdb ./test
+==84929== and then give GDB the following command
+==84929==   target remote | /usr/libexec/valgrind/../../bin/vgdb --pid=84929
+==84929== --pid is optional if only one valgrind process is running
+==84929== 
+--84929-- REDIR: 0x4019e40 (ld-linux-x86-64.so.2:strlen) redirected to 0x580c7ed5 (???)
+--84929-- REDIR: 0x4019c10 (ld-linux-x86-64.so.2:index) redirected to 0x580c7eef (???)
+--84929-- Reading syms from /usr/libexec/valgrind/vgpreload_core-amd64-linux.so
+--84929-- Reading syms from /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so
+==84929== WARNING: new redirection conflicts with existing -- ignoring it
+--84929--     old: 0x04019e40 (strlen              ) R-> (0000.0) 0x580c7ed5 ???
+--84929--     new: 0x04019e40 (strlen              ) R-> (2007.0) 0x04c2d1b0 strlen
+--84929-- REDIR: 0x4019dc0 (ld-linux-x86-64.so.2:strcmp) redirected to 0x4c2e300 (strcmp)
+--84929-- REDIR: 0x401aa80 (ld-linux-x86-64.so.2:mempcpy) redirected to 0x4c31f90 (mempcpy)
+--84929-- Reading syms from /usr/lib64/libm-2.17.so
+--84929-- Reading syms from /usr/lib64/libc-2.17.so
+--84929-- REDIR: 0x51c91d0 (libc.so.6:strcasecmp) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
+--84929-- REDIR: 0x51c5f40 (libc.so.6:strnlen) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
+--84929-- REDIR: 0x51cb4d0 (libc.so.6:strncasecmp) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
+--84929-- REDIR: 0x51c89a0 (libc.so.6:memset) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
+--84929-- REDIR: 0x51c8950 (libc.so.6:memcpy@GLIBC_2.2.5) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
+--84929-- REDIR: 0x51c7930 (libc.so.6:__GI_strrchr) redirected to 0x4c2cb70 (__GI_strrchr)
+--84929-- REDIR: 0x51be740 (libc.so.6:malloc) redirected to 0x4c29eec (malloc)
+--84929-- REDIR: 0x51dea10 (libc.so.6:__GI_strstr) redirected to 0x4c32220 (__strstr_sse2)
+--84929-- REDIR: 0x51cdc30 (libc.so.6:__GI_memcpy) redirected to 0x4c2efb0 (__GI_memcpy)
+--84929-- REDIR: 0x51beb60 (libc.so.6:free) redirected to 0x4c2afe6 (free)
+--84929-- REDIR: 0x51cf4b0 (libc.so.6:strchrnul) redirected to 0x4c31ab0 (strchrnul)
+--84929-- REDIR: 0x51c8b70 (libc.so.6:__GI_mempcpy) redirected to 0x4c31cc0 (__GI_mempcpy)
+--84929-- REDIR: 0x51cdbc0 (libc.so.6:memcpy@@GLIBC_2.14) redirected to 0x4a247a0 (_vgnU_ifunc_wrapper)
+--84929-- REDIR: 0x528dc70 (libc.so.6:__memcpy_ssse3_back) redirected to 0x4c2e7b0 (memcpy@@GLIBC_2.14)
+--84929-- REDIR: 0x51c5e60 (libc.so.6:__GI_strlen) redirected to 0x4c2d110 (__GI_strlen)
+==84929== 
+==84929== HEAP SUMMARY:
+==84929==     in use at exit: 6 bytes in 3 blocks
+==84929==   total heap usage: 8 allocs, 5 frees, 1,196 bytes allocated
+==84929== 
+==84929== Searching for pointers to 3 not-freed blocks
+==84929== Checked 90,304 bytes
+==84929== 
+==84929== 2 bytes in 1 blocks are definitely lost in loss record 1 of 3
+==84929==    at 0x4C29F73: malloc (vg_replace_malloc.c:309)
+==84929==    by 0x4011E5: load_tensor (in /depot/euge/data/araviki/vsdsquadronmini/verification/softmax/test)
+==84929==    by 0x401C21: main (in /depot/euge/data/araviki/vsdsquadronmini/verification/softmax/test)
+==84929== 
+==84929== 2 bytes in 1 blocks are definitely lost in loss record 2 of 3
+==84929==    at 0x4C29F73: malloc (vg_replace_malloc.c:309)
+==84929==    by 0x400F3D: f_load_tensor (in /depot/euge/data/araviki/vsdsquadronmini/verification/softmax/test)
+==84929==    by 0x401C37: main (in /depot/euge/data/araviki/vsdsquadronmini/verification/softmax/test)
+==84929== 
+==84929== 2 bytes in 1 blocks are definitely lost in loss record 3 of 3
+==84929==    at 0x4C29F73: malloc (vg_replace_malloc.c:309)
+==84929==    by 0x400C56: f_create_tensor (in /depot/euge/data/araviki/vsdsquadronmini/verification/softmax/test)
+==84929==    by 0x401A64: softmax (in /depot/euge/data/araviki/vsdsquadronmini/verification/softmax/test)
+==84929==    by 0x401C4A: main (in /depot/euge/data/araviki/vsdsquadronmini/verification/softmax/test)
+==84929== 
+==84929== LEAK SUMMARY:
+==84929==    definitely lost: 6 bytes in 3 blocks
+==84929==    indirectly lost: 0 bytes in 0 blocks
+==84929==      possibly lost: 0 bytes in 0 blocks
+==84929==    still reachable: 0 bytes in 0 blocks
+==84929==         suppressed: 0 bytes in 0 blocks
+==84929== 
+==84929== ERROR SUMMARY: 3 errors from 3 contexts (suppressed: 0 from 0)

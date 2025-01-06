@@ -35,17 +35,17 @@ if __name__ == "__main__":
     save_tensor(conv_layer.bias.detach().numpy(), "bias.bin")
     save_tensor(output_tensor.detach().numpy(), "output_tensor.bin")
 
-    print("Input Tensor:")
-    print(input_tensor)
+    # print("Input Tensor:")
+    # print(input_tensor)
 
-    print("\nWeights:")
-    print(conv_layer.weight)
+    # print("\nWeights:")
+    # print(conv_layer.weight)
 
-    print("\nBias:")
-    print(conv_layer.bias)
+    # print("\nBias:")
+    # print(conv_layer.bias)
 
-    print("\nOutput Tensor (after Conv2D):")
-    print(output_tensor)
+    # print("\nOutput Tensor (after Conv2D):")
+    # print(output_tensor)
 
 
 

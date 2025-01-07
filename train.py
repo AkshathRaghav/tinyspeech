@@ -6,10 +6,10 @@ import matplotlib.pyplot as plt
 import os
 import argparse
 from logger import LoggerSetup
-from src.data import convert_to_contiguous, preprocess_audio_batch
-from src.modules import QModel 
-from src.tinyspeech import TinySpeechZ, QTinySpeechZ
-from src.exportquant import export_to_hfile
+from training.data import convert_to_contiguous, preprocess_audio_batch
+from training.modules import QModel 
+from training.tinyspeech import TinySpeechZ, QTinySpeechZ
+from training.exportquant import export_to_hfile
 import types
 from tqdm import tqdm
 

@@ -2,7 +2,7 @@ import torch, torchaudio
 import torch.nn as nn
 import torch.nn.functional as F
 
-from src.modules import * 
+from training.modules import * 
 
 # ---- 
 # w/ Quant

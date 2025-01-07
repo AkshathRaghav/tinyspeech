@@ -47,3 +47,11 @@ float mean(int8_t *data, int size) {
     }
     return sum / size;
 }
+
+void relu(Tensor* input) {
+    for (int i = 0; i < input->size; i++) {
+        if (input->data[i] < 0) {
+            input->data[i] = 0;
+        }
+    }
+}

@@ -1,8 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include "./main.h"
+#include "tensor.h"
 
 void print_tensor_upto_n(Tensor* input, int len) { 
     for (int i = 0; i < len; i++) { 
@@ -29,7 +25,7 @@ void confirm_equal(Tensor* output, Tensor* expected_output) {
     }
     for (int i = 0; i < output->size; i++) { 
         if (output->data != NULL) { 
-            printf("%d, %d\n", output->data[i], expected_output->data[i]);
+            // printf("%d, %d\n", output->data[i], expected_output->data[i]);
 
             // Verifying conv2d and batchnorm was really painful. 
             // I'm setting the error bar somewhat high, since I'm scaling the inputs and weights by factors of 10 (to ensure it doesnt get truncated when quantizing)

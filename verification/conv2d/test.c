@@ -5,9 +5,6 @@
 #include <float.h>
 #include "../main.c"
 
-int get_index(int n, int c, int h, int w, int N, int C, int H, int W) {
-    return n * (C * H * W) + c * (H * W) + h * W + w;
-}
 
 void relu(Tensor* input) {
     for (int i = 0; i < input->size; i++) {

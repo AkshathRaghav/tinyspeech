@@ -4,7 +4,7 @@ SHELL := /bin/bash
 
 
 CC = gcc
-CFLAGS = -lm -Wall -Iverification
+CFLAGS = -lm -Wall -Iverification -Iinclude
 	
 	
 # Paths

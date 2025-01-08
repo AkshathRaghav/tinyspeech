@@ -1,3 +1,6 @@
+#ifndef TENSOR_H
+#define TENSOR_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,3 +27,5 @@ void f_print_tensor(Tensor *tensor);
 void print_tensor(Tensor *tensor);
 void print_tensor_recursive(int8_t *data, int8_t *shape, int dims, int current_dim, int indent_level);
 void f_print_tensor_recursive(float *data, int8_t *shape, int dims, int current_dim, int indent_level);
+
+#endif

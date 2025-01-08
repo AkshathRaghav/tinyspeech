@@ -1,19 +1,8 @@
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <math.h>
-#include <float.h>
-#define INT_MAX 2147483647
+#include "misc.h"
 
-typedef struct {
-    int8_t *data;
-    int8_t shape[4]; // [N, C, H, W]
-} Tensor;
-
-
-float compute_mean_abs(int32_t *w, size_t len) {
+float compute_mean_abs(int32_t *w, int32_t len) {
     int sum = 0.0f;
-    for (size_t i = 0; i < len; i++) {
+    for (int32_t i = 0; i < len; i++) {
         sum += fabsf((int)w[i]);
     }
     return sum / len;
@@ -25,11 +14,14 @@ int8_t clamp(int8_t val, int8_t min_val, int8_t max_val) {
     return val;
 }
 
-void quantize_weights(int32_t *w, int8_t *u, size_t len) {
-    float mag = compute_mean_abs(w, len);
-    float scale = 32 / mag;
+void quantize_weights(int32_t *w, int8_t *u, int32_t len, float* magn) {
+    if (!magn) { 
+        float computed_magn = compute_mean_abs(w, len);
+        magn = &computed_magn;
+    } 
+    float scale = 32 / (*magn); // 32 
 
-    for (size_t i = 0; i < len; i++) {
+    for (int32_t i = 0; i < len; i++) {
         u[i] = (int8_t) clamp(roundf(w[i] * scale), -127.0f, 127.0f);
     }
 }
@@ -38,6 +30,11 @@ void sigmoid(Tensor *tensor) {
     for (int i = 0; i < tensor->size; i++) {
         tensor->data[i] = 1.0f / (1.0f + expf(-tensor->data[i]));
     }
+}
+
+void attention(Tensor *residual, Tensor *S, Tensor *scale) { 
+    Tensor V_prime = f_create_tensor(input.shape, 4); 
+
 }
 
 float mean(int8_t *data, int size) {

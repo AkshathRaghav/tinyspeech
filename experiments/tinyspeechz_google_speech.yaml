@@ -11,7 +11,7 @@ dataset:
 
 save_pth: "models"
 epochs: 40
-batch_size: 64
+batch_size: 16
 
 lr: 0.008
 momentum: 0.95

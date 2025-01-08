@@ -207,7 +207,7 @@ class BitLinear(nn.Linear, BitQuant):
 
 class BitConv2d(nn.Conv2d, BitQuant):
     def __init__(self, in_channels, out_channels, kernel_size, stride, padding, groups=1,  QuantType='4bitsym', WScale='PerTensor', NormType='RMS', quantscale=0.25):
-        nn.Conv2d.__init__(self,in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding, groups=groups, bias=False)
+        nn.Conv2d.__init__(self,in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding, groups=groups, bias=True)
         BitQuant.__init__(self, QuantType, WScale, quantscale)
 
         self.NormType = NormType

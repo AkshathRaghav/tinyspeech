@@ -54,7 +54,7 @@ Tensor adaptive_avg_pool2d(Tensor *input) {
     return output;
 }
 
-Tensor conv2d(Tensor *input, Tensor *weights, Tensor *bias, int stride, int padding) {
+Tensor conv2d(Tensor *input, Tensor *weights, Tensor *bias, uint8_t stride, uint8_t padding) {
     uint8_t batch_size = input->shape[0];
     uint8_t in_channels = input->shape[1];
     uint8_t in_height = input->shape[2];
@@ -67,9 +67,21 @@ Tensor conv2d(Tensor *input, Tensor *weights, Tensor *bias, int stride, int padd
     uint8_t out_height = (in_height + 2 * padding - kernel_height) / stride + 1;
     uint8_t out_width = (in_width + 2 * padding - kernel_width) / stride + 1;
 
-    int32_t int32_output = (int32_t *)malloc(batch_size * out_channels * out_height * out_width * sizeof(int32_t));
+    #ifdef QUANT_MODE_QAT 
+        if (input->f_data) { 
+            continue;
+        } else if (input->data) { 
+            uint8_t shape[4] = {batch_size, out_channels, out_height, out_width}; 
+            Tensor output = f_create_tensor(shape, 4);
+        } else { 
+            perror("Neither f_data nor data initialized in conv2d input.")
+        }
+    #else 
+        float int32_output = (float *)malloc(batch_size * out_channels * out_height * out_width * sizeof(float));
+        float aggr = 0.0f; 
+    #endif
 
-    float aggr = 0.0f; 
+    
 
     for (uint8_t n = 0; n < batch_size; n++) {
         for (uint8_t oc = 0; oc < out_channels; oc++) {
@@ -146,14 +158,14 @@ Tensor maxpool2d(Tensor* input, int kernel_size, int stride) {
     int8_t shape[4] =  {input->shape[0], input->shape[1], ((input->shape[2] - kernel_size) / stride + 1), ((input->shape[3] - kernel_size) / stride + 1)};
     Tensor output = create_tensor(shape, 4);
 
-    for (int b = 0; b < output.shape[0]; b++) { // Batch 
-        for (int c = 0; c < output.shape[1]; c++) { // Channel 
-            for (int oh = 0; oh < output.shape[2]; oh++) { // Output height
-                for (int ow = 0; ow < output.shape[3]; ow++) { // Output width
-                    int max_value = INT8_MIN;
+    for (uint8_t b = 0; b < output.shape[0]; b++) { // Batch 
+        for (uint8_t c = 0; c < output.shape[1]; c++) { // Channel 
+            for (uint8_t oh = 0; oh < output.shape[2]; oh++) { // Output height
+                for (uint8_t ow = 0; ow < output.shape[3]; ow++) { // Output width
+                    int8_t max_value = INT8_MIN;
 
-                    for (int kh = 0; kh < kernel_size; kh++) { // Kernel height
-                        for (int kw = 0; kw < kernel_size; kw++) { // Kernel width
+                    for (uint8_t kh = 0; kh < kernel_size; kh++) { // Kernel height
+                        for (uint8_t kw = 0; kw < kernel_size; kw++) { // Kernel width
                             int ih = oh * stride + kh; 
                             int iw = ow * stride + kw; 
 
@@ -255,15 +267,13 @@ Tensor upsample_nearest(Tensor* input, int8_t scale_factor) {
 
 void AttentionCondenser(Tensor* input, int8_t in_channels, int8_t mid_channels, int8_t out_channels, uint8_t layer_id) { 
 
-    Tensor residual = input; // fix 
     Tensor Q = maxpool2d(input, 2, 2);
     Tensor K = conv2d(&Q, model_weights[layer_id++], model_weights[layer_id++], 1, 1);
-    K = conv2d(&K, model_weights[layer_id++], model_weights[layer_id++], 1, 1);
+    K = conv2d(&K, model_weights[layer_id++], model_weights[layer_id++], 1, 1, 0);
     Tensor A = upsample_nearest(&K, 2);
-    Tensor S = conv2d(&A, model_weights[layer_id++], model_weights[layer_id++], 1, 0);
-    sigmoid(&S);
-    Tensor V_prime = attention(&residual, &S, model_weights[layer_id++]);
-    quantize_weights(&V_prime, &residual, residual.size);
+    Tensor S = conv2d(&A, model_weights[layer_id++], model_weights[layer_id++], 1, 1, 0); 
+    sigmoid(&S); 
+    attention(&input, &S, model_weights[layer_id++]); // S = V_prime, overwriting to save space.
     return V_prime;
     
 }
@@ -288,8 +298,8 @@ Tensor TinySpeechZ(Tensor* input, uint8_t num_classes) {
     Attn_BN_Block(&x, B2_IN, B2_MC_0, B2_OC_0, B2_MC_1, B2_OC_1, &layer_id); 
     Attn_BN_Block(&x, B3_IN, B3_MC_0, B3_OC_0, B3_MC_1, B3_OC_1, &layer_id); 
     Attn_BN_Block(&x, B4_IN, B4_MC_0, B4_OC_0, B4_MC_1, B4_OC_1, &layer_id); 
-    Attn_BN_Block(&x, B5_IN, B5_MC_0, B5_OC_0, B5_MC_1, B5_OC_1, &layer_id); 
-    Attn_BN_Block(&x, B6_IN, B6_MC_0, B6_OC_0, B6_MC_1, B6_OC_1, &layer_id); 
+    // Attn_BN_Block(&x, B5_IN, B5_MC_0, B5_OC_0, B5_MC_1, B5_OC_1, &layer_id); 
+    // Attn_BN_Block(&x, B6_IN, B6_MC_0, B6_OC_0, B6_MC_1, B6_OC_1, &layer_id); 
     Tensor x = relu(conv2d(&x, Tensor *weights, Tensor *bias, 3, 0)); layer_id++; 
     Tensor x = adaptive_avg_pool2d(&x);
     fc_layer(&x, Tensor weights);

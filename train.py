@@ -1,4 +1,4 @@
-import torch, torchaudio
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from datasets import load_dataset, load_from_disk, concatenate_datasets
@@ -138,7 +138,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Training script') 
     parser.add_argument('--config', type=str, default=None, help='Path to config file')
-    parser.add_argument('--quant', action='store_true', help='Quantize model')
+    parser.add_argument('--quant_mode', type=str, default="QAT", help='Quantize model')
     parser.add_argument('--model_type',type=str, default='Z', help='Model Type')
     parser.add_argument('--prune', action='store_true', help='Prune model')
     parser.add_argument('--labels', type=int, default=31, help='Number of labels to train for')
@@ -154,6 +154,7 @@ if __name__ == "__main__":
     parser.add_argument('--device', type=str, default='cpu', help='Device to train on') 
     args = parser.parse_args()
 
+
     if args.config: 
         logger.info(f"Loading config from {args.config}")
         import yaml
@@ -162,6 +163,9 @@ if __name__ == "__main__":
     else: 
         config = args
 
+
+    assert config.quant_mode in ["DQ", "SQ", "QAT", "UN"], '`quant_mode` needs to be in ["DQ", "SQ", "QAT", "UN"]'
+    
     torch.manual_seed(config.seed)
     logger.info(f"Setting seed to {config.seed}")
 
@@ -200,11 +204,11 @@ if __name__ == "__main__":
     
     dataloader = torch.utils.data.DataLoader(speech, batch_size=config.batch_size, collate_fn=preprocess_audio_batch)
 
-    if config.quant:
+    if "Q" in config.quant_mode:
         logger.info(f"Loading Quantized Version!")
         if config.model_type == "Z": 
             if config.quant_type < 8: 
-                model = QTinySpeechZ(num_classes=num_labels, QuantType=f"{config.quant_type}bitsym")
+                model = QTinySpeechZ(num_classes=num_labels, QuantType=f"{config.quant_type}bitsym").to(torch.device("cuda")) 
             else: 
                 model = QTinySpeechZ(num_classes=num_labels, QuantType=f"{config.quant_type}bit")
     else:
@@ -260,18 +264,22 @@ if __name__ == "__main__":
         accuracy_values.append(epoch_accuracy)
 
 
-    plot_metrics(loss_values, accuracy_values, str(model), os.path.join(config.save_pth, str(model)))
-    logger.critical(f"Model plots saved at {os.path.join(config.save_pth, str(model))}")
+    # plot_metrics(loss_values, accuracy_values, str(model), os.path.join(config.save_pth, str(model)))
+    # logger.critical(f"Model plots saved at {os.path.join(config.save_pth, str(model))}")
 
     torch.save(model.state_dict(), os.path.join(config.save_pth, str(model) + '.pth'))
     logger.critical(f"Model saved at {os.path.join(config.save_pth, str(model))}")
 
-    if config.quant: 
-        model = QModel(model)
+    if config.quant_mode != "DQ": 
+        model = QModel(model, quant_type=config.quant_type, w_scale=config.w_scale, quant_scale=config.quant_scale)
         logger.info(f"Quantized model loaded with {model.numel()[0]} parameters")
 
         model.quantize() 
         model.save_checkpoint(os.path.join(config.save_pth, str(model) + '_quant.pth'))
+        # export_to_hfile(model, os.path.join(config.save_pth, str(model) + '.h'), str(model))
+    
+    else: 
+        pass 
+        # TODO: Make a export function to store it in float32 
 
-        export_to_hfile(model, os.path.join(config.save_pth, str(model) + '.h'), str(model))
 

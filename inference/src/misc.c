@@ -28,13 +28,14 @@ void quantize_weights(int32_t *w, int8_t *u, int32_t len, float* magn) {
 
 void sigmoid(Tensor *tensor) {
     for (int i = 0; i < tensor->size; i++) {
-        tensor->data[i] = 1.0f / (1.0f + expf(-tensor->data[i]));
+        tensor->f_data[i] = 1.0f / (1.0f + expf(-tensor->f_data[i]));
     }
 }
 
 void attention(Tensor *residual, Tensor *S, Tensor *scale) { 
-    Tensor V_prime = f_create_tensor(input.shape, 4); 
-
+    for (int i = 0; i < S->size; i++) {
+        S->f_data[i] = residual->data[i] + (residual->f_data[i] * (*scale->f_data)[i] * S->f_data[i])
+    }
 }
 
 float mean(int8_t *data, int size) {

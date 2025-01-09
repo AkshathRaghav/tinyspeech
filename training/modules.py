@@ -14,6 +14,9 @@ class QModel(nn.Module):
         self.original_weights = {}
         self.scales = {}
 
+    def __str__(self): 
+        return str(self.model)
+
     def quantize(self):
         for name, param in self.model.named_parameters():
             if 'weight' in name or 'bias' in name or 'scale' in name:
@@ -67,6 +70,7 @@ class QModel(nn.Module):
 
     def load_checkpoint(self, filepath):
         checkpoint = torch.load(filepath)
+        print(checkpoint['model_state_dict'])
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.original_weights = checkpoint['original_weights']
         self.scales = checkpoint['scales']
@@ -207,13 +211,13 @@ class BitLinear(nn.Linear, BitQuant):
 
 class BitConv2d(nn.Conv2d, BitQuant):
     def __init__(self, in_channels, out_channels, kernel_size, stride, padding, groups=1,  QuantType='4bitsym', WScale='PerTensor', NormType='RMS', quantscale=0.25):
-        nn.Conv2d.__init__(self,in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding, groups=groups, bias=True)
+        nn.Conv2d.__init__(self,in_channels, out_channels, kernel_size=kernel_size, stride=(stride,), padding=(padding,), groups=groups, bias=True)
         BitQuant.__init__(self, QuantType, WScale, quantscale)
 
         self.NormType = NormType
         self.groups = groups
-        self.stride = stride
-        self.padding = padding
+        self.stride = (stride,)
+        self.padding = (padding,)
 
     def forward(self, x):
         w = self.weight 
@@ -225,6 +229,7 @@ class BitConv2d(nn.Conv2d, BitQuant):
         w_int, w_scale, _ = self.weight_quant(w)
         w_quant = self.ste(w_int, w_scale, w)
 
+        # Interesting: If you switch baise=None to bias=self.bias, the training stagnates in the second epoch itself. Why is this? Is self.bias pointing to something else?     
         y = F.conv2d(x_quant, w_quant, groups=self.groups, stride=self.stride, padding=self.padding, bias=None)
         return y
   

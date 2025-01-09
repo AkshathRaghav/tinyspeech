@@ -41,6 +41,8 @@ python train.py --save_pth "models" --quant --quant_type 8 --model_type Z --epoc
 python train.py --config tinyspeechz_google_speech.yaml
 ```
 
+> We offer training using one of `quant_mode = ["DQ", "SQ", "QAT", "UN"]`. These expand to **Dynamic Quantization**, **Static Quantization**, **Quantization-Aware Training (QAT)** and **Unquantized**.
+
 ### Inference 
 
 All the layers required to run the model are specified in the `./verification` folder. Under this, you will find sub-folders for all the layers with a `.c` and `.py` file. First, we generate a tensor and run it against a layer/activation function used in `./training/tinyspeech.py` or `./training/modules.py`. Then, we saved this in the form of a `int8` or `float` binary, which is subsequently loaded into C for testing with the custom code. 

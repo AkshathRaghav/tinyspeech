@@ -9,9 +9,9 @@ device: "cuda:0"
 dataset:  
   path: "./data/filtered"
 
-save_pth: "models"
+save_pth: "./models"
 epochs: 40
-batch_size: 16
+batch_size: 64
 
 lr: 0.008
 momentum: 0.95
@@ -19,7 +19,7 @@ seed: 42
 
 labels: ["Yes", "No",  "On", "Off", "Stop", "Go"]
 
-quant: True    
+quant_mode: "QAT"  
 model_type: 'Z'
 quant_type: 8
 prune: False  

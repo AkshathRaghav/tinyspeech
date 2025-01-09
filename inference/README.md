@@ -1,15 +1,112 @@
-## Notes: 
+# Explaining the inference process: 
 
-> np.int8 consumes 8 bits (1 byte) per element. An input tensor of [1, 12, 94] is 1128 bytes. Weights of 2.7k parameters is 2.7 bytes.  
+We've implemented the following schemes post-training for the inference engine: **Dynamic Quantization**, **Static Quantization**, and **Quantization-Aware Training (QAT)** during **inference**.
 
-1. We use Quant-aware training during the Pythonic training phase. Meaning, on every pass through a layer, we take the incoming float values, quantize it and then pass it through the actual PyTorch layers. 
-> Simulated quantization is applied during the forward pass, introducing quantization noise to weights and activations. The model learns to adapt to these effects. Gradients computed in float32. 
+QAT and Static Quantization are identical for the inference stage, but different in training. You could probably notice this in the `./train.py` file. 
 
-2. During inference time, we keep all the weights quantized in int8. They are directly loading when inferencing. 
+### **Comparison Table**
 
-3. Towards the end of attention condensers (not the blocks), we do a sigmoid, and get the results out in 'float'. Then we do the V' calculations, and quantize it again before passing it along. 
+| **Aspect**                    | **Dynamic Quantization**                         | **Static Quantization**                           | **Quantization-Aware Training**                     |
+|--------------------------------|------------------------------------------------|--------------------------------------------------|---------------------------------------------------|
+| **Quantized During Computation** | Weights (int8), Activations (dynamically int8)  | Weights (int8), Activations (precomputed int8)    | Fake quantized weights & activations (float32)     |
+| **Dequantized During Computation** | Activations/output back to float32             | None (stays in int8)                              | None during training (all float32)                 |
+| **Stored Weights**             | Quantized `int8` weights                        | Quantized `int8` weights                         | Quantized `int8` weights after conversion          |
+| **Stored Activations**         | None                                           | Precomputed scale & zero-point                   | Precomputed scale & zero-point after conversion    |
 
-4. Idea for loading and storing weights: 
-    1. We'll pre-make Tensor objects and store them in h files. 
-    2. We'll name them based on the BLOCK(#)_CONDENSER(#)_CONV2D(#)_WEIGHT 
-    3. Only thing we need to pass into the blocks and condensers ids.  
+
+---
+
+### **Dynamic Quantization**
+
+```python
+def forward(self, x):
+    # x is the input activation
+    # Type: float (input is in float32 at the start)
+
+    residual = x  
+    # Type: float (no quantization yet)
+
+    Q = self.condense(x)
+    # Type: float (MaxPool2d works directly on float)
+
+    K = F.relu(self.group_conv(Q))
+    # Type (Q -> float intermediate -> K): float
+    # Action: 
+    # 1. group_conv weights are quantized to int8.
+    # 2. Multiply int8 weights with float inputs, producing float outputs.
+
+    K = F.relu(self.pointwise_conv(K))
+    # Type (K -> float intermediate -> K): float
+    # Action:
+    # 1. pointwise_conv weights are quantized to int8.
+    # 2. Multiply int8 weights with float intermediate, output is float.
+
+    A = self.upsample(K)
+    # Type (K -> A): float
+    # Action: Nearest-neighbor upsampling works on float.
+
+    A = self.expand_conv(A)
+    # Type (A -> float intermediate -> A): float
+    # Action:
+    # 1. expand_conv weights are quantized to int8.
+    # 2. Multiply int8 weights with float inputs, output is float.
+
+    S = torch.sigmoid(A)
+    # Type (A -> S): float
+    # Action: Sigmoid operates directly on float.
+
+    V_prime = residual * S * self.scale
+    # Type: float
+    # Action: Element-wise multiplication and addition in float.
+
+    return V_prime
+    # Output Type: float
+```
+
+---
+
+### **Static Quantization / Quantization-Aware Training**
+
+```python
+def forward(self, x):
+    # x is the input activation
+    # Type: int8 (already quantized at the start)
+
+    residual = x  
+    # Type: int8 (kept in quantized form)
+
+    Q = self.condense(x)
+    # Type: int8
+    # Action: MaxPool2d works directly on int8.
+
+    K = F.relu(self.group_conv(Q))
+    # Type (Q -> float intermediate -> K): int8
+    # Action:
+    # 1. Multiply int8 weights with int8 activations.
+    # 2. Store intermediate product as float.
+    # 3. Quantize the result back to int8.
+
+    K = F.relu(self.pointwise_conv(K))
+    # Type (K -> float intermediate -> K): int8
+    # Action: Same as above.
+
+    A = self.upsample(K)
+    # Type (K -> A): int8
+    # Action: Nearest-neighbor upsampling works on int8.
+
+    A = self.expand_conv(A)
+    # Type (A -> float intermediate -> A): int8
+    # Action: Same as above.
+
+    S = torch.sigmoid(A)
+    # Type (A -> S): float
+    # Action: Dequantize A to float for sigmoid operation.
+
+    V_prime = residual * S * self.scale
+    # Type: float
+    # Action: Dequantize residual and perform element-wise multiplication and addition.
+
+    return V_prime
+    # Output Type: float
+```
+

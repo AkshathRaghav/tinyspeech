@@ -19,7 +19,7 @@ class QModel(nn.Module):
 
     def quantize(self):
         for name, param in self.model.named_parameters():
-            if 'weight' in name or 'bias' in name or 'scale' in name:
+            if 'weight' in name or 'bias' in name or 'scale' in name or 'calibrated' in name:
                 q_param, scale, _ = self.bit_quant.weight_quant(param.data)
                 self.original_weights[name] = param.data.clone()
                 param.data = q_param
@@ -83,39 +83,60 @@ class BitQuant:
         self.QuantType = QuantType
         self.WScale = WScale
         self.quantscale = quantscale
+        self.activations_mean = None
+
+        self.calibrated_activation_scale = torch.nn.Parameter(torch.tensor(1.0))
+        self.calibrated_activation_scale.requires_grad = False
+        self.calibrated_weight_scale = torch.nn.Parameter(torch.tensor(1.0))
+        self.calibrated_weight_scale.requires_grad = False
 
     def activation_quant(self, x):
-        if self.QuantType == '2bitsym':
-            scale = 1.0 / x.abs().max(dim=-1, keepdim=True).values.clamp_(min=1e-5)
-            y = (x * scale).round().clamp_(-2, 1)
-        elif self.QuantType == '4bitsym':
-            scale = 7.0 / x.abs().max(dim=-1, keepdim=True).values.clamp_(min=1e-5)
-            y = (x * scale).round().clamp_(-8, 7)
-        elif self.QuantType == '8bit':
-            scale = 127.0 / x.abs().max(dim=-1, keepdim=True).values.clamp_(min=1e-5)
-            y = (x * scale).round().clamp_(-128, 127)
-        else:
-            raise AssertionError(f'Invalid QuantType: {self.QuantType}. Expected one of: "2bitsym", "4bitsym", "8bit"')
-        return y, scale
-
-    def weight_quant(self, w):
-        if self.WScale == 'PerOutput':
-            mag = w.abs().max(dim=-1, keepdim=True)[0].clamp_(min=1e-5)
-        elif self.WScale == 'PerTensor':
-            mag = w.abs().mean().clamp_(min=1e-5)
-        else:
-            raise AssertionError(f"Invalid WScale: {self.WScale}. Expected one of: 'PerTensor', 'PerOutput'")
+        mag = x.abs().max(dim=-1, keepdim=True).values.clamp_(min=1e-5)
+        if not self.activations_mean: 
+            self.activations_mean = x.abs().mean().clamp_(min=1e-5)
+        else: 
+            self.activations_mean += x.abs().mean().clamp_(min=1e-5)
+            self.activations_mean /= 2
+        mag = mag * self.calibrated_activation_scale
 
         if self.QuantType == '2bitsym':
             scale = 1.0 / mag
+            y = (x * scale).round().clamp_(-2, 1)
+        elif self.QuantType == '4bitsym':
+            scale = 8.0 / mag
+            y = (x * scale).round().clamp_(-8, 7)
+        elif self.QuantType == '8bit':
+            scale = 127.0 / mag
+            y = (x * scale).round().clamp_(-128, 127)
+        else:
+            raise AssertionError(f'Invalid QuantType: {self.QuantType}. Expected one of: "2bitsym", "4bitsym", "8bit"')
+
+        return y, scale
+
+    def update_clipping_scalar(self, activations_mean, w):
+
+        self.calibrated_activation_scale = torch.nn.Parameter(activations_mean.clone().detach() / self.quantscale)
+        self.calibrated_activation_scale.requires_grad = False  
+
+        if self.WScale == 'PerOutput':
+            s = w.abs().max(dim=-1, keepdim=True)[0].clamp_(min=1e-5) / self.quantscale
+        else:
+            s = w.abs().mean().clamp_(min=1e-5) / self.quantscale
+
+        self.calibrated_weight_scale = torch.nn.Parameter(s)
+        self.calibrated_weight_scale.requires_grad = False  
+
+    def weight_quant(self, w):
+        if self.QuantType == '2bitsym':
+            scale = 1.0 / self.calibrated_weight_scale
             u = ((w * scale - 0.5).round().clamp_(-2, 1) + 0.5)
             bpw = 2
         elif self.QuantType == '4bitsym':
-            scale = self.quantscale * 8.0 / mag
+            scale = self.quantscale * 8.0 / self.calibrated_weight_scale
             u = ((w * scale - 0.5).round().clamp_(-8, 7) + 0.5)
             bpw = 4
         elif self.QuantType == '8bit':
-            scale = 128.0 * self.quantscale / mag
+            scale = 128.0 * self.quantscale / self.calibrated_weight_scale
             u = (w * scale).round().clamp_(-128, 127)
             bpw = 8
         else:

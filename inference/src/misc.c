@@ -14,17 +14,22 @@ int8_t clamp(int8_t val, int8_t min_val, int8_t max_val) {
     return val;
 }
 
-void quantize_weights(int32_t *w, int8_t *u, int32_t len, float* magn) {
-    if (!magn) { 
-        float computed_magn = compute_mean_abs(w, len);
-        magn = &computed_magn;
-    } 
-    float scale = 32 / (*magn); // 32 
-
-    for (int32_t i = 0; i < len; i++) {
-        u[i] = (int8_t) clamp(roundf(w[i] * scale), -127.0f, 127.0f);
+void quantize_weights(Tensor *w, Tensor *u, float* scale, uint8_t retain_float) {
+    for (int32_t i = 0; i < u->size; i++) {
+        if (retain_float == 1) { 
+            u->f_data[i] = clamp(roundf(w->f_data[i] / (*scale)), -127.0f, 127.0f);
+        } else { 
+            u->data[i] = (int8_t) clamp(roundf(w->f_data[i] / (*scale)), -127.0f, 127.0f);
+        }
     }
 }
+
+void dequantize_weights(Tensor *quantized_weights, Tensor *dequantized_weights, float scale) {
+    for (int32_t i = 0; i < dequantize_weights.size; i++) {
+        dequantized_weights->f_data[i] = quantized_weights->[i] * scale;
+    }
+}
+
 
 void sigmoid(Tensor *tensor) {
     for (int i = 0; i < tensor->size; i++) {

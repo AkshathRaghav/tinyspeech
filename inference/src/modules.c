@@ -54,7 +54,8 @@ Tensor adaptive_avg_pool2d(Tensor *input) {
     return output;
 }
 
-Tensor conv2d(Tensor *input, Tensor *weights, Tensor *bias, uint8_t stride, uint8_t padding) {
+Tensor conv2d(Tensor *input, Tensor *weights, Tensor *bias, float scale, uint8_t stride, uint8_t padding) {
+    // avoids indexing overhead ig, direct access
     uint8_t batch_size = input->shape[0];
     uint8_t in_channels = input->shape[1];
     uint8_t in_height = input->shape[2];
@@ -67,43 +68,39 @@ Tensor conv2d(Tensor *input, Tensor *weights, Tensor *bias, uint8_t stride, uint
     uint8_t out_height = (in_height + 2 * padding - kernel_height) / stride + 1;
     uint8_t out_width = (in_width + 2 * padding - kernel_width) / stride + 1;
 
-    #ifdef QUANT_MODE_QAT 
-        if (input->f_data) { 
-            continue;
-        } else if (input->data) { 
-            uint8_t shape[4] = {batch_size, out_channels, out_height, out_width}; 
-            Tensor output = f_create_tensor(shape, 4);
-        } else { 
-            perror("Neither f_data nor data initialized in conv2d input.")
-        }
-    #else 
-        float int32_output = (float *)malloc(batch_size * out_channels * out_height * out_width * sizeof(float));
-        float aggr = 0.0f; 
-    #endif
+    uint8_t output_shape[4] = {batch_size, out_channels, out_height, out_width}; // make new 
+    Tensor float_intermediate = f_create_tensor(output_shape, 4);
 
-    
+    #ifdef QUANT_MODE_DQ 
+        quantize_weights(input, input, &scale, CONVERT_FLOAT); // quant it again        
+    #endif
 
     for (uint8_t n = 0; n < batch_size; n++) {
         for (uint8_t oc = 0; oc < out_channels; oc++) {
             for (uint8_t h = 0; h < out_height; h++) {
                 for (uint8_t w = 0; w < out_width; w++) {
-                    int32_t sum = 0;
+                    float sum = 0;
                     for (uint8_t ic = 0; ic < in_channels; ic++) {
                         for (uint8_t kh = 0; kh < kernel_height; kh++) {
                             for (uint8_t kw = 0; kw < kernel_width; kw++) {
-                                int32_t ih = h * stride + kh - padding;
-                                int32_t iw = w * stride + kw - padding;
+                                uint32_t ih = h * stride + kh - padding;
+                                uint32_t iw = w * stride + kw - padding;
 
                                 if (ih >= 0 && ih < in_height && iw >= 0 && iw < in_width) {
-                                    int32_t in_index = n * (in_channels * in_height * in_width) +
+                                    uint32_t in_index = n * (in_channels * in_height * in_width) +
                                                    ic * (in_height * in_width) +
                                                    ih * in_width + iw;
 
-                                    int32_t weight_index = oc * (in_channels * kernel_height * kernel_width) +
+                                    uint32_t weight_index = oc * (in_channels * kernel_height * kernel_width) +
                                                        ic * (kernel_height * kernel_width) +
                                                        kh * kernel_width + kw;
 
-                                    sum += input->data[in_index] * weights->data[weight_index];
+                                    #ifdef QUANT_MODE_DQ
+                                        sum += input->f_data[in_index] * weights->data[weight_index];
+                                    #elif QUANT_MODE_QAT_SQ
+                                        sum += input->data[in_index] * weights->data[weight_index];
+                                    #endif 
+                                    
                                 }
                             }
                         }
@@ -113,24 +110,21 @@ Tensor conv2d(Tensor *input, Tensor *weights, Tensor *bias, uint8_t stride, uint
                                     oc * (out_height * out_width) +
                                     h * out_width + w;
 
-                    output.data[out_index] = sum;
-                    aggr += fabsf(sum);
+                    float_intermediate.f_data[out_index] = sum;
                 }
             }
         }
     }
+
+    free_tensor(&input);
     
+    #ifdef QUANT_MODE_DQ
+        dequantize_weights(&float_intermediate, &float_intermediate, scale);
+    #elif QUANT_MODE_QAT_SQ
+        quantize_weights(&float_intermediate, &float_intermediate, scale, CONVERT_INT8);
+    #endif 
 
-    free_tensor(input); // yank some more space
-
-    uint8_t shape[4] = {batch_size, out_channels, out_height, out_width}; // make new 
-    Tensor output = create_tensor(shape, 4);
-
-    quantize_weights(int32_output, &(output->data), output_size, &aggr); // quant it again
-    
-    free(int32_output);
-
-    return output;
+    return float_intermediate;
 }   
 
 Tensor fc_layer(Tensor *input, Tensor *weights) {

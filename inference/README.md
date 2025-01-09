@@ -82,9 +82,9 @@ def forward(self, x):
     K = F.relu(self.group_conv(Q))
     # Type (Q -> float intermediate -> K): int8
     # Action:
-    # 1. Multiply int8 weights with int8 activations.
-    # 2. Store intermediate product as float.
-    # 3. Quantize the result back to int8.
+    # Input: int8 
+    # Intermediate: float (single val) 
+    # Output: int8, diff shape 
 
     K = F.relu(self.pointwise_conv(K))
     # Type (K -> float intermediate -> K): int8

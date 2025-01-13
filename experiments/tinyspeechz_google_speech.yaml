@@ -12,7 +12,7 @@ dataset:
 save_pth: "../models"
 quant_save_path: "../models"
 header_path: "../inference/include"
-epochs: 1
+epochs: 35
 batch_size: 64
 
 lr: 0.008

@@ -32,14 +32,31 @@ void dequantize_weights(Tensor *quantized_weights, Tensor *dequantized_weights, 
 
 
 void sigmoid(Tensor *tensor) {
+    #ifdef QUANT_MODE_QAT_SQ
+        Tensor output = f_create_tensor(tensor->shape, 4); 
+    #endif 
+
     for (int i = 0; i < tensor->size; i++) {
-        tensor->f_data[i] = 1.0f / (1.0f + expf(-tensor->f_data[i]));
+        #ifdef QUANT_MODE_QAT_SQ
+            tensor->f_data[i] = 1.0f / (1.0f + expf(-tensor->f_data[i]));
+        #else 
+            output->f_data[i] = 1.0f / (1.0f + expf(-tensor->data[i]));
+        #endif
     }
+
+    #ifdef QUANT_MODE_QAT_SQ
+        free_tensor(tensor);
+        tensor = output; 
+    #endif 
 }
 
 void attention(Tensor *residual, Tensor *S, Tensor *scale) { 
     for (int i = 0; i < S->size; i++) {
-        S->f_data[i] = residual->data[i] + (residual->f_data[i] * (*scale->f_data)[i] * S->f_data[i])
+        #ifdef QUANT_MODE_QAT_SQ
+            S->f_data[i] = residual->data[i] + (residual->f_data[i] * (*scale->f_data)[i] * S->f_data[i]);
+        #else 
+            S->f_data[i] = residual->f_data[i] + (residual->f_data[i] * (*scale->f_data)[i] * S->f_data[i]);
+        #endif 
     }
 }
 

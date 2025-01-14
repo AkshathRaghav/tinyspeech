@@ -70,8 +70,10 @@ float mean(int8_t *data, int size) {
 
 void relu(Tensor* input) {
     for (int i = 0; i < input->size; i++) {
-        if (input->data[i] < 0) {
-            input->data[i] = 0;
-        }
+        #ifdef QUANT_MODE_QAT_SQ
+            if (input->data[i] < 0) input->data[i] = 0;
+        #else
+            if (input->f_data[i] < 0) input->f_data[i] = 0;
+        #endif
     }
 }

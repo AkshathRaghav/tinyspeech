@@ -1,28 +1,36 @@
 #include "modules.h"
 
-Tensor batchnorm2d(Tensor* input, Tensor* mean, Tensor* variance, Tensor* gamma, Tensor* beta) {
-    int8_t N = input->shape[0];
+void batchnorm2d(Tensor* input, Tensor* gamma, Tensor* beta, Tensor* scale, Tensor* mean, Tensor* variance) {
     int8_t C = input->shape[1];
     int8_t H = input->shape[2];
     int8_t W = input->shape[3];
 
     int8_t shape[4] = {N, C, H, W};
-    Tensor output = create_tensor(shape, 4);
+    Tensor output = f_create_tensor(input->shape, 4);
 
-    for (int8_t n = 0; n < N; n++) {
+    for (int8_t n = 0; n < input->shape[0]; n++) {
         for (int8_t c = 0; c < C; c++) {
-            float var_sqrt = sqrtf(variance->f_data[c] + 0.0001);
+            float var_sqrt = (variance->f_data[c] != 0) ? sqrtf(variance->f_data[c] + 0.0001f) : 0.0001f;
             for (int8_t h = 0; h < H; h++) {
                 for (int8_t w = 0; w < W; w++) {
                     int32_t idx = n * (C * H * W) + c * (H * W) + h * W + w;
-                    float scaled = gamma->f_data[c] * ((float)input->data[idx] - mean->f_data[c]) / var_sqrt + beta->f_data[c];
-                    output.data[idx] = (int8_t)roundf(scaled);
+                    float scaled = gamma->f_data[c] * (input->f_data[idx] - mean->f_data[c]) / var_sqrt + beta->f_data[c];
+                    output.f_data[idx] = roundf(scaled);
                 }
             }
         }
     }
 
-    return output; 
+    #ifdef QUANT_MODE_QAT_SQ
+        Tensor quant_output = create_tensor(output.shape, 4);
+        quantize_weights(&output, &quant_output, &(scale->f_data), CONVERT_INT8);
+
+        free_tensor(output);
+        output = quant_output;
+    #endif 
+
+    free_tensor(input);
+    input = output;
 }
 
 Tensor adaptive_avg_pool2d(Tensor *input) {
@@ -43,7 +51,11 @@ Tensor adaptive_avg_pool2d(Tensor *input) {
                                 c * (height * width) + 
                                 h * width + 
                                 w;
-                    sum += input->f_data[index];
+                    #ifdef QUANT_MODE_QAT_SQ
+                        sum += input->data[index];
+                    #else
+                        sum += input->f_data[index];
+                    #endif
                 }
             }
             int out_index = n * channels + c; // Adjust for the output shape
@@ -144,6 +156,7 @@ Tensor fc_layer(Tensor *input, Tensor *weights) {
             output.f_data[n * output_features + o] = sum;
         }
     }
+
     return output; 
 }
 
@@ -217,9 +230,6 @@ Tensor softmax(Tensor *input) {
     int batch_size = input->shape[0];
     int num_classes = input->shape[1];
 
-    int8_t shape[2] = {batch_size, num_classes};
-    Tensor output = f_create_tensor(shape, 2);
-
     for (int n = 0; n < batch_size; n++) {
         // Find max value for numerical stability
         float max_val = -FLT_MAX;
@@ -234,18 +244,16 @@ Tensor softmax(Tensor *input) {
         float sum_exp = 0.0f;
         for (int c = 0; c < num_classes; c++) {
             int index = n * num_classes + c;
-            output.f_data[index] = expf(input->data[index] - max_val);
-            sum_exp += output.f_data[index];
+            input->f_data[index] = expf(input->f_data[index] - max_val);
+            sum_exp += input->f_data[index];
         }
 
         // Normalize to get probabilities
         for (int c = 0; c < num_classes; c++) {
             int index = n * num_classes + c;
-            output.f_data[index] /= sum_exp;
+            input->f_data[index] /= sum_exp;
         }
     }
-
-    return output; 
 }
 
 Tensor upsample_nearest(Tensor* input, int8_t scale_factor) {
@@ -291,48 +299,39 @@ Tensor upsample_nearest(Tensor* input, int8_t scale_factor) {
 }
 
 
-void AttentionCondenser(Tensor* input, int8_t in_channels, int8_t mid_channels, int8_t out_channels, uint8_t layer_id) { 
+void AttentionCondenser(Tensor* input, int8_t in_channels, int8_t mid_channels, int8_t out_channels, uint8_t* layer_id) { 
 
     Tensor Q = maxpool2d(input, 2, 2);
-    Tensor K = conv2d(&Q, model_weights[layer_id++], model_weights[layer_id++], model_weights[layer_id++], 1, 1); 
-    layer_id++; // ignoring calibrated weight-scale
-    K = conv2d(&K, model_weights[layer_id++], model_weights[layer_id++], model_weights[layer_id++], 1, 1); // K's data is de-allocated, ok to overwrite. 
-    layer_id++; 
+    Tensor K = conv2d(&Q, model_weights[(*layer_id)++], model_weights[(*layer_id)++], model_weights[(*layer_id)++], 1, 1); 
+    *layer_id++; // ignoring calibrated weight-scale
+    K = conv2d(&K, model_weights[(*layer_id)++], model_weights[(*layer_id)++], model_weights[(*layer_id)++], 1, 1); // K's data is de-allocated, ok to overwrite. 
+    *layer_id++; 
     K = upsample_nearest(&K, 2); // K = A here
-    K = conv2d(&K, model_weights[layer_id++], model_weights[layer_id++], model_weights[layer_id++], 1, 1); // K = S here 
-    layer_id++;
+    K = conv2d(&K, model_weights[(*layer_id)++], model_weights[(*layer_id)++], model_weights[(*layer_id)++], 1, 1); // K = S here 
+    *layer_id++;
     sigmoid(&K); 
-    attention(&input, &K, model_weights[layer_id++]); // Overwriting to save space.
+    attention(&input, &K, model_weights[(*layer_id)++]); // Overwriting to save space.
     return K; // S = V_prime
+
+    // Note than normal SQ requires the output to go in int8 format. 
+    // I've maintained it in float here, such that when the output goes into the batchnorm2d layer, it can maintain it's precision. Within the BatchNorm2d, we will then quant it back.
+    // Technically, **this is still SQ**, because sigmoid and attention are mainly arithmetic operations, and batchnorm2d is the next "layer" with weights.  
     
 }
 
-void Attn_BN_Block(Tensor* input, int8_t in_channels, int8_t mid_channels_0, int8_t out_channels_0, int8_t mid_channels_1, int8_t out_channels_1, uint8_t* layer_id)  { 
+Tensor Attn_BN_Block(Tensor* input, int8_t in_channels, int8_t mid_channels_0, int8_t out_channels_0, int8_t mid_channels_1, int8_t out_channels_1, uint8_t* layer_id)  { 
 
-    AttentionCondenser(input, in_channels, mid_channels_0, out_channels_0, layer_id, layer_id);
-    batchnorm2d(input, mean, variance, gamma, beta, layer_id++); // TODO: QAT and DQ not fixed. 
-    AttentionCondenser(input, in_channels, mid_channels_1, out_channels_1, layer_id); 
-    batchnorm2d(input, mean, variance, gamma, beta, layer_id++); 
+    Tensor x_ = AttentionCondenser(input, in_channels, mid_channels_0, out_channels_0, layer_id, layer_id); free_tensor(input);
+    batchnorm2d(x_, model_weights[(*layer_id)++], model_weights[(*layer_id)++], model_weights[(*layer_id)++], model_weights[(*layer_id) + 1], model_weights[(*layer_id) + 2]); 
+    *layer_id += 3; 
+    Tensor x = AttentionCondenser(x_, in_channels, mid_channels_1, out_channels_1, layer_id); free_tensor(x_);
+    batchnorm2d(x, model_weights[(*layer_id)++], model_weights[(*layer_id)++], model_weights[(*layer_id)++], model_weights[(*layer_id)++]); 
+    *layer_id += 3; 
+
+    // BatchNorm layers overwrite the input in-place. 
+    // Note the ordering of the input to batch norms while referencing from model_weights. 
+
+    return x; 
 
 }
 
-Tensor TinySpeechZ(Tensor* input, uint8_t num_classes) { 
-    uint8_t layer_id = 0; 
-    uint8_t shape[2] = {input->shape[0], num_classes}; 
-    
-    Tensor output = f_create_tensor(shape, 2);
-
-    Tensor x = relu(conv2d(&input, Tensor *weights, Tensor *bias, 3, 0)); layer_id++; 
-    Attn_BN_Block(&x, B1_IN, B1_MC_0, B1_OC_0, B1_MC_1, B1_OC_1, &layer_id); 
-    Attn_BN_Block(&x, B2_IN, B2_MC_0, B2_OC_0, B2_MC_1, B2_OC_1, &layer_id); 
-    Attn_BN_Block(&x, B3_IN, B3_MC_0, B3_OC_0, B3_MC_1, B3_OC_1, &layer_id); 
-    Attn_BN_Block(&x, B4_IN, B4_MC_0, B4_OC_0, B4_MC_1, B4_OC_1, &layer_id); 
-    // Attn_BN_Block(&x, B5_IN, B5_MC_0, B5_OC_0, B5_MC_1, B5_OC_1, &layer_id); 
-    // Attn_BN_Block(&x, B6_IN, B6_MC_0, B6_OC_0, B6_MC_1, B6_OC_1, &layer_id); 
-    Tensor x = relu(conv2d(&x, Tensor *weights, Tensor *bias, 3, 0)); layer_id++; 
-    Tensor x = adaptive_avg_pool2d(&x);
-    fc_layer(&x, Tensor weights);
-    Tensor output = softmax(&x);
-
-    return output; 
-}

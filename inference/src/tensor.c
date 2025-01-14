@@ -251,6 +251,9 @@ void free_tensor(Tensor* tensor) {
     } else { 
         free(tensor->data);
     }
+    if (t->shape) free(t->shape);
+    t->shape = t->data = NULL;
+    t->f_data = NULL;
 }
 
 

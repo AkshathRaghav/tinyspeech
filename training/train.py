@@ -79,10 +79,11 @@ if __name__ == "__main__":
     parser.add_argument('--lr', type=float, default=0.01, help='Learning rate')
     parser.add_argument('--momentum', type=float, default=0.9, help='Momentum')
     parser.add_argument('--seed', type=int, default=42, help='Seed for reproducibility')
-    parser.add_argument('--quant_type', type=str, default=None, help='Precision level [None (Unquantized), 2bitsym, 4bitsym, 8bit]')
+    parser.add_argument('--quant_type', type=str, default=None, help='Precision level [32 (Unquantized), 2bitsym, 4bitsym, 8bit]')
     parser.add_argument('--wscale', type=str, default="PerTensor", help='Seed for reproducibility')
     parser.add_argument('--quant_scale', type=float, default=0.25, help='Seed for reproducibility')
     parser.add_argument('--device', type=str, default='cpu', help='Device to train on') 
+    parser.add_argument('--test', type=int, default=0, help='Log all the internal weights for differential testing') 
     args = parser.parse_args()
 
 
@@ -144,14 +145,14 @@ if __name__ == "__main__":
     else:
         logger.info(f"Loading Unquantized Version!")
         if config.model_type == "Z": 
-            model = TinySpeechZ(num_classes=num_labels).to(torch.device("cuda")) 
+            model = TinySpeechZ(num_classes=num_labels, test=config.test).to(torch.device("cuda")) 
 
     # The proposed TinySpeech networks were trained using the SGD
     # optimizer in TensorFlow with following hyperparameters: momentum=0.9, learning rate=0.01,
     # number of epochs=50, batch size=64.
 
     logger.info(f"Model loaded with {numel(model)} parameters") 
-    logger.info(f"Model size is {int(config.quant_type[0]) * numel(model, only_trainable=True) / 1000} kb")
+    if config.quant_type != "32bit":  logger.info(f"Model size is {int(config.quant_type[0]) * numel(model, only_trainable=True) / 1000} kb")
     model.train()
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=config.lr, momentum=config.momentum, weight_decay=1e-4)

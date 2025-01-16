@@ -5,6 +5,18 @@ import torch.nn as nn
 import torch.nn.functional as F
 import json
 from datetime import datetime
+import numpy as np
+
+
+def log_tensor(name, tensor): 
+    tensor = tensor.detach().cpu().numpy()
+    print(f"Layer Name: {name}, Output Tensor Shape: {tensor.shape}")
+
+    if " " not in name.strip(): 
+        with open(f"./logs/{name}.bin", 'wb') as f:
+            for dim in tensor.shape:
+                f.write(np.array(dim, dtype=np.int8).tobytes())
+            f.write(tensor.flatten().astype(float).tobytes())
 
 
 # ---- 
@@ -59,12 +71,12 @@ class TinySpeechZ(nn.Module):
         super(TinySpeechZ, self).__init__()
         self.conv1 = nn.Conv2d(1, 7, kernel_size=3, stride=1, padding=1)
 
-        self.block1 = Attn_BN_Block(in_channels=7, mid_channels_0=14, out_channels_0=3, mid_channels_1=6, out_channels_1=7, test=test)
-        self.block2 = Attn_BN_Block(in_channels=7, mid_channels_0=14, out_channels_0=3, mid_channels_1=6, out_channels_1=7, test=test)
-        self.block3 = Attn_BN_Block(in_channels=7, mid_channels_0=14, out_channels_0=2, mid_channels_1=4, out_channels_1=7, test=test)
-        self.block4 = Attn_BN_Block(in_channels=7, mid_channels_0=14, out_channels_0=11, mid_channels_1=22, out_channels_1=7, test=test)
-        self.block5 = Attn_BN_Block(in_channels=7, mid_channels_0=14, out_channels_0=14, mid_channels_1=28, out_channels_1=7, test=test)
-        self.block6 = Attn_BN_Block(in_channels=7, mid_channels_0=14, out_channels_0=10, mid_channels_1=20, out_channels_1=7, test=test)
+        self.block1 = Attn_BN_Block("AttnCondBlock1", in_channels=7, mid_channels_0=14, out_channels_0=3, mid_channels_1=6, out_channels_1=7, test=test)
+        self.block2 = Attn_BN_Block("AttnCondBlock2", in_channels=7, mid_channels_0=14, out_channels_0=3, mid_channels_1=6, out_channels_1=7, test=test)
+        self.block3 = Attn_BN_Block("AttnCondBlock3", in_channels=7, mid_channels_0=14, out_channels_0=2, mid_channels_1=4, out_channels_1=7, test=test)
+        self.block4 = Attn_BN_Block("AttnCondBlock4", in_channels=7, mid_channels_0=14, out_channels_0=11, mid_channels_1=22, out_channels_1=7, test=test)
+        self.block5 = Attn_BN_Block("AttnCondBlock5", in_channels=7, mid_channels_0=14, out_channels_0=14, mid_channels_1=28, out_channels_1=7, test=test)
+        self.block6 = Attn_BN_Block("AttnCondBlock6", in_channels=7, mid_channels_0=14, out_channels_0=10, mid_channels_1=20, out_channels_1=7, test=test)
 
         self.conv2 = nn.Conv2d(in_channels=7, out_channels=17, kernel_size=3, stride=1, padding=1)
         self.global_pool = nn.AdaptiveAvgPool2d(1)
@@ -82,18 +94,33 @@ class TinySpeechZ(nn.Module):
 
     def forward(self, x):
         x = x.to(self.device)
+        if self.test: log_tensor("<Input to Model>", x)
+
         x = F.relu(self.conv1(x))  
+        if self.test: log_tensor("Conv1", x)
+
         x = self.block1(x)
+        if self.test: log_tensor("AttnCondBlock1", x)
         x = self.block2(x)
+        if self.test: log_tensor("AttnCondBlock2", x)
         x = self.block3(x)
+        if self.test: log_tensor("AttnCondBlock3", x)
         x = self.block4(x)
+        if self.test: log_tensor("AttnCondBlock4", x)
         x = self.block5(x)
+        if self.test: log_tensor("AttnCondBlock5", x)
         x = self.block6(x)
+        if self.test: log_tensor("AttnCondBlock6", x)
+
         x = F.relu(self.conv2(x))  
+        if self.test: log_tensor("Conv2", x)
         x = self.global_pool(x)  
+        if self.test: log_tensor("Global_Pool", x)
         x = x.view(x.size(0), -1)  
+        if self.test: log_tensor("<Tensor Shape change before FC Layer>", x)
         x = self.fc(x)  
-            
+        if self.test: log_tensor("<Output from Model>", x)
+
         return x
 
 

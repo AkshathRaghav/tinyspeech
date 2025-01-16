@@ -1,6 +1,7 @@
 training/test.ipynb
 data/
 models/
+logs/
 */__pycache__/
 training/__pycache__/
 *.pyc

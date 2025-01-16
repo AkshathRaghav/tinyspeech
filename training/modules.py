@@ -1,6 +1,18 @@
 import torch, torchaudio
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
+
+def log_tensor(name, tensor): 
+    tensor = tensor.detach().cpu().numpy()
+    print(f"Layer Name: {name}, Output Tensor Shape: {tensor.shape}")
+
+    if " " not in name.strip(): 
+        with open(f"./logs/{name}.bin", 'wb') as f:
+            for dim in tensor.shape:
+                f.write(np.array(dim, dtype=np.int8).tobytes())
+            f.write(tensor.flatten().astype(float).tobytes())
+
 
 # ---- 
 # w/ Quant
@@ -298,7 +310,7 @@ class QAttn_BN_Block(nn.Module):
 # ----
 
 class AttentionCondenser(nn.Module):
-    def __init__(self, in_channels, mid_channels, out_channels):
+    def __init__(self, name, in_channels, mid_channels, out_channels, test=0):
         super(AttentionCondenser, self).__init__()
         self.condense = nn.MaxPool2d(kernel_size=2, stride=2)
         self.group_conv = nn.Conv2d(in_channels, mid_channels, kernel_size=1, groups=1)  
@@ -306,32 +318,45 @@ class AttentionCondenser(nn.Module):
         self.scale = nn.Parameter(torch.Tensor(1))
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')  
         self.expand_conv = nn.Conv2d(out_channels, in_channels, kernel_size=1)
+        self.test = test
+        self.name = name
 
     def forward(self, x):
         residual = x  
         Q = self.condense(x)  
+        if self.test: log_tensor(f"{self.name}_MaxPool2d", x_)
         K = F.relu(self.group_conv(Q)) 
+        if self.test: log_tensor(f"{self.name}_Conv1", x_)
         K = F.relu(self.pointwise_conv(K))
+        if self.test: log_tensor(f"{self.name}_Conv2", x_)
         A = self.upsample(K)
+        if self.test: log_tensor(f"{self.name}_Upsample", x_)
         A = self.expand_conv(A)   
+        if self.test: log_tensor(f"{self.name}_Conv3", x_)
         S = torch.sigmoid(A)  
+        if self.test: log_tensor(f"{self.name}_Sigmoid", x_)
         V_prime = residual * S * self.scale  
         V_prime += residual  
         return V_prime
 
 class Attn_BN_Block(nn.Module): 
-    def __init__(self, in_channels, mid_channels_0, out_channels_0, mid_channels_1, out_channels_1, test=0): 
+    def __init__(self, name, in_channels, mid_channels_0, out_channels_0, mid_channels_1, out_channels_1, test=0): 
         super(Attn_BN_Block, self).__init__()
-        self.layer1 = AttentionCondenser(in_channels, mid_channels_0, out_channels_0)
+        self.name = name
+        self.layer1 = AttentionCondenser(f"{self.name}_AttnCond1", in_channels, mid_channels_0, out_channels_0)
         self.layer2 = nn.BatchNorm2d(num_features=in_channels)
-        self.layer3 = AttentionCondenser(in_channels, mid_channels_1, out_channels_1)
+        self.layer3 = AttentionCondenser(f"{self.name}_AttnCond2", in_channels, mid_channels_1, out_channels_1)
         self.layer4 = nn.BatchNorm2d(num_features=in_channels)
         self.test = test 
     
     def forward(self, x): 
         x_ = self.layer1(x)
+        if self.test: log_tensor(f"{self.name}_AttnCond1", x_)
         x_ = self.layer2(x_)
+        if self.test: log_tensor(f"{self.name}_BatchNorm2d", x_)
         x_ = self.layer3(x_)
+        if self.test: log_tensor(f"{self.name}_AttnCond2", x_)
         x_ = self.layer4(x_)
+        if self.test: log_tensor(f"{self.name}_BatchNorm2d", x_)
         x_ += x
         return x 

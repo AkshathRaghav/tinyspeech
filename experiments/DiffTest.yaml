@@ -1,0 +1,22 @@
+name: "TinySpeechZ"
+device: "cuda:0"
+
+dataset:  
+  path: "./data/filtered"
+
+save_pth: "../models"
+quant_save_path: "../models"
+header_path: "../inference/include"
+epochs: 35
+batch_size: 64
+
+lr: 0.008
+momentum: 0.95
+seed: 42
+
+labels: ["Yes", "No",  "On", "Off", "Stop", "Go"]
+
+test: 1
+quant_mode: "UN"  
+model_type: 'Z'
+quant_type: "32bit"

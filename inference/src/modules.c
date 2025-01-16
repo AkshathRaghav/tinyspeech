@@ -142,7 +142,7 @@ Tensor conv2d(Tensor *input, Tensor *weights, Tensor *bias, Tensor *scale, uint8
 Tensor fc_layer(Tensor *input, Tensor *weights) {
     int8_t batch_size = input->shape[0];
     int8_t input_features = input->shape[1];
-    int8_t output_features = weights->shape[0];
+    int8_t output_features = weights->shape[0]; // Tracking the num_classes using weights itself
 
     int8_t shape[2] = {batch_size, output_features};
     Tensor output = f_create_tensor(shape, 2);

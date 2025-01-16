@@ -94,7 +94,7 @@ class TinySpeechZ(nn.Module):
 
     def forward(self, x):
         x = x.to(self.device)
-        if self.test: log_tensor("<Input to Model>", x)
+        if self.test: log_tensor("ModelInput", x)
 
         x = F.relu(self.conv1(x))  
         if self.test: log_tensor("Conv1", x)
@@ -119,7 +119,8 @@ class TinySpeechZ(nn.Module):
         x = x.view(x.size(0), -1)  
         if self.test: log_tensor("<Tensor Shape change before FC Layer>", x)
         x = self.fc(x)  
-        if self.test: log_tensor("<Output from Model>", x)
+        if self.test: log_tensor("ModelOutput", x)
+        x = self.softmax(x)
 
         return x
 

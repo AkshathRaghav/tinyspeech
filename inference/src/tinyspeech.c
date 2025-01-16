@@ -1,7 +1,7 @@
 #include "./tensor.h"
 #include "../drivers/driver.h"
 
-Tensor TinySpeechZ(Tensor* input, uint8_t num_classes) { 
+Tensor TinySpeechZ(Tensor* input) { 
     uint8_t layer_id = 0; 
 
     Tensor x = relu(conv2d(&input, model_weights[layer_id++], model_weights[layer_id++], model_weights[layer_id++], 3, 1)); layer_id++; 
@@ -15,6 +15,7 @@ Tensor TinySpeechZ(Tensor* input, uint8_t num_classes) {
     Tensor pooled = adaptive_avg_pool2d(&x); free_tensor(&x);
     x = fc_layer(&pooled, Tensor weights); free_tensor(pooled);
     softmax(&x);
+    // TODO: Logic check the shape here 
 
     return x; 
 }
@@ -24,11 +25,19 @@ Tensor TinySpeechZ(Tensor* input, uint8_t num_classes) {
 
 int main() { 
 
-    uint8_t shape[4] = { };
-    uint8_t num_classes = ; 
-    Tensor input = create_tensor();
-    Tensor output = TinySpeechZ(input, );
+    #ifdef TEST_RUN
+        fprintf("Loading in TEST mode.\n");
+        uint8_t shape[4] = { 1, 1, 12, 94 };
 
-    f_print_tensor(output);
-    
+        #ifdef QUANT_MODE_QAT_SQ
+            Tensor input = f_load_tensor("../logs/ModelInput.bin", 4);
+        #else QUANT_MODE_DQ
+            Tensor input = load_tensor("../logs/ModelInput.bin", 4);
+        #endif
+
+        Tensor output = TinySpeechZ(input);
+        f_print_tensor(output);
+    #endif
+
+    return 0;
 }

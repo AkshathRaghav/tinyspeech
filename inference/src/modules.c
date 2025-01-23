@@ -1,11 +1,12 @@
 #include "modules.h"
+#include "misc.h"
+#include "weights.h"
 
-void batchnorm2d(Tensor* input, Tensor* gamma, Tensor* beta, Tensor* scale, Tensor* mean, Tensor* variance) {
+Tensor batchnorm2d(Tensor* input, Tensor* gamma, Tensor* beta, Tensor* scale, Tensor* mean, Tensor* variance) {
     int8_t C = input->shape[1];
     int8_t H = input->shape[2];
     int8_t W = input->shape[3];
 
-    int8_t shape[4] = {N, C, H, W};
     Tensor output = f_create_tensor(input->shape, 4);
 
     for (int8_t n = 0; n < input->shape[0]; n++) {
@@ -30,7 +31,7 @@ void batchnorm2d(Tensor* input, Tensor* gamma, Tensor* beta, Tensor* scale, Tens
     #endif 
 
     free_tensor(input);
-    input = output;
+    return output;
 }
 
 Tensor adaptive_avg_pool2d(Tensor *input) {
@@ -66,35 +67,35 @@ Tensor adaptive_avg_pool2d(Tensor *input) {
     return output;
 }
 
-Tensor conv2d(Tensor *input, Tensor *weights, Tensor *bias, Tensor *scale, uint8_t stride, uint8_t padding) {
+Tensor conv2d(Tensor *input, Tensor *weights, Tensor *bias, Tensor *scale, u_int8_t stride, u_int8_t padding) {
     // avoids indexing overhead ig, direct access
-    uint8_t batch_size = input->shape[0];
-    uint8_t in_channels = input->shape[1];
-    uint8_t in_height = input->shape[2];
-    uint8_t in_width = input->shape[3];
+    u_int8_t batch_size = input->shape[0];
+    u_int8_t in_channels = input->shape[1];
+    u_int8_t in_height = input->shape[2];
+    u_int8_t in_width = input->shape[3];
 
-    uint8_t out_channels = weights->shape[0];
-    uint8_t kernel_height = weights->shape[2];
-    uint8_t kernel_width = weights->shape[3];
+    u_int8_t out_channels = weights->shape[0];
+    u_int8_t kernel_height = weights->shape[2];
+    u_int8_t kernel_width = weights->shape[3];
 
-    uint8_t out_height = (in_height + 2 * padding - kernel_height) / stride + 1;
-    uint8_t out_width = (in_width + 2 * padding - kernel_width) / stride + 1;
+    u_int8_t out_height = (in_height + 2 * padding - kernel_height) / stride + 1;
+    u_int8_t out_width = (in_width + 2 * padding - kernel_width) / stride + 1;
 
-    uint8_t output_shape[4] = {batch_size, out_channels, out_height, out_width}; // make new 
+    u_int8_t output_shape[4] = {batch_size, out_channels, out_height, out_width}; // make new 
     Tensor float_intermediate = f_create_tensor(output_shape, 4);
 
     #ifdef QUANT_MODE_DQ 
         quantize_weights(input, input, &(scale->f_data), CONVERT_FLOAT); // quant it again        
     #endif
 
-    for (uint8_t n = 0; n < batch_size; n++) {
-        for (uint8_t oc = 0; oc < out_channels; oc++) {
-            for (uint8_t h = 0; h < out_height; h++) {
-                for (uint8_t w = 0; w < out_width; w++) {
+    for (u_int8_t n = 0; n < batch_size; n++) {
+        for (u_int8_t oc = 0; oc < out_channels; oc++) {
+            for (u_int8_t h = 0; h < out_height; h++) {
+                for (u_int8_t w = 0; w < out_width; w++) {
                     float sum = 0;
-                    for (uint8_t ic = 0; ic < in_channels; ic++) {
-                        for (uint8_t kh = 0; kh < kernel_height; kh++) {
-                            for (uint8_t kw = 0; kw < kernel_width; kw++) {
+                    for (u_int8_t ic = 0; ic < in_channels; ic++) {
+                        for (u_int8_t kh = 0; kh < kernel_height; kh++) {
+                            for (u_int8_t kw = 0; kw < kernel_width; kw++) {
                                 uint32_t ih = h * stride + kh - padding;
                                 uint32_t iw = w * stride + kw - padding;
 
@@ -147,8 +148,8 @@ Tensor fc_layer(Tensor *input, Tensor *weights) {
     int8_t shape[2] = {batch_size, output_features};
     Tensor output = f_create_tensor(shape, 2);
 
-    for (uint8_t n = 0; n < batch_size; n++) {
-        for (uint8_t o = 0; o < output_features; o++) {
+    for (u_int8_t n = 0; n < batch_size; n++) {
+        for (u_int8_t o = 0; o < output_features; o++) {
             float sum = 0.0f;
             for (int i = 0; i < input_features; i++) {
                 sum += input->f_data[n * input_features + i] * weights->f_data[o * input_features + i];
@@ -171,10 +172,10 @@ Tensor maxpool2d(Tensor* input, int kernel_size, int stride) {
     #endif
     
 
-    for (uint8_t b = 0; b < output.shape[0]; b++) { // Batch 
-        for (uint8_t c = 0; c < output.shape[1]; c++) { // Channel 
-            for (uint8_t oh = 0; oh < output.shape[2]; oh++) { // Output height
-                for (uint8_t ow = 0; ow < output.shape[3]; ow++) { // Output width
+    for (u_int8_t b = 0; b < output.shape[0]; b++) { // Batch 
+        for (u_int8_t c = 0; c < output.shape[1]; c++) { // Channel 
+            for (u_int8_t oh = 0; oh < output.shape[2]; oh++) { // Output height
+                for (u_int8_t ow = 0; ow < output.shape[3]; ow++) { // Output width
                     
                     #ifdef QUANT_MODE_QAT_SQ
                         int8_t max_value = INT8_MIN;
@@ -182,8 +183,8 @@ Tensor maxpool2d(Tensor* input, int kernel_size, int stride) {
                         float max_value = FLOAT_MIN; 
                     #endif
 
-                    for (uint8_t kh = 0; kh < kernel_size; kh++) { // Kernel height
-                        for (uint8_t kw = 0; kw < kernel_size; kw++) { // Kernel width
+                    for (u_int8_t kh = 0; kh < kernel_size; kh++) { // Kernel height
+                        for (u_int8_t kw = 0; kw < kernel_size; kw++) { // Kernel width
                             int ih = oh * stride + kh; 
                             int iw = ow * stride + kw; 
 
@@ -266,11 +267,11 @@ Tensor upsample_nearest(Tensor* input, int8_t scale_factor) {
         Tensor output = f_create_tensor(shape, 4);
     #endif
     
-    for (uint8_t b = 0; b < output.shape[0]; b++) { // Batch 
-        for (uint8_t c = 0; c < output.shape[1]; c++) { // Channel 
-            for (uint8_t h = 0; h < output.shape[2]; h++) { // Height 
+    for (u_int8_t b = 0; b < output.shape[0]; b++) { // Batch 
+        for (u_int8_t c = 0; c < output.shape[1]; c++) { // Channel 
+            for (u_int8_t h = 0; h < output.shape[2]; h++) { // Height 
                 uint32_t nearest_h = h / scale_factor;
-                for (uint8_t w = 0; w < output.shape[3]; w++) { // Width 
+                for (u_int8_t w = 0; w < output.shape[3]; w++) { // Width 
                     uint32_t nearest_w = w / scale_factor;
                     uint32_t input_index = b * (input->shape[1] * input->shape[2] * input->shape[3]) +
                                       c * (input->shape[2] * input->shape[3]) +
@@ -299,18 +300,18 @@ Tensor upsample_nearest(Tensor* input, int8_t scale_factor) {
 }
 
 
-void AttentionCondenser(Tensor* input, int8_t in_channels, int8_t mid_channels, int8_t out_channels, uint8_t* layer_id) { 
+void AttentionCondenser(Tensor* input, int8_t in_channels, int8_t mid_channels, int8_t out_channels, u_int8_t* layer_id) { 
 
     Tensor Q = maxpool2d(input, 2, 2);
-    Tensor K = conv2d(&Q, model_weights[(*layer_id)++], model_weights[(*layer_id)++], model_weights[(*layer_id)++], 1, 1); 
+    Tensor K = conv2d(&Q, model_weights[(*layer_id)++].address, model_weights[(*layer_id)++].address, model_weights[(*layer_id)++].address, 1, 1); 
     *layer_id++; // ignoring calibrated weight-scale
-    K = conv2d(&K, model_weights[(*layer_id)++], model_weights[(*layer_id)++], model_weights[(*layer_id)++], 1, 1); // K's data is de-allocated, ok to overwrite. 
+    K = conv2d(&K, model_weights[(*layer_id)++].address, model_weights[(*layer_id)++].address, model_weights[(*layer_id)++].address, 1, 1); // K's data is de-allocated, ok to overwrite. 
     *layer_id++; 
     K = upsample_nearest(&K, 2); // K = A here
-    K = conv2d(&K, model_weights[(*layer_id)++], model_weights[(*layer_id)++], model_weights[(*layer_id)++], 1, 1); // K = S here 
+    K = conv2d(&K, model_weights[(*layer_id)++].address, model_weights[(*layer_id)++].address, model_weights[(*layer_id)++].address, 1, 1); // K = S here 
     *layer_id++;
-    sigmoid(&K); 
-    attention(&input, &K, model_weights[(*layer_id)++]); // Overwriting to save space.
+    K = sigmoid(&K); 
+    attention(&input, &K, model_weights[(*layer_id)++].address); // Overwriting to save space.
     return K; // S = V_prime
 
     // Note than normal SQ requires the output to go in int8 format. 
@@ -319,13 +320,13 @@ void AttentionCondenser(Tensor* input, int8_t in_channels, int8_t mid_channels, 
     
 }
 
-Tensor Attn_BN_Block(Tensor* input, int8_t in_channels, int8_t mid_channels_0, int8_t out_channels_0, int8_t mid_channels_1, int8_t out_channels_1, uint8_t* layer_id)  { 
+Tensor Attn_BN_Block(Tensor* input, int8_t in_channels, int8_t mid_channels_0, int8_t out_channels_0, int8_t mid_channels_1, int8_t out_channels_1, u_int8_t* layer_id)  { 
 
     Tensor x_ = AttentionCondenser(input, in_channels, mid_channels_0, out_channels_0, layer_id, layer_id); free_tensor(input);
-    batchnorm2d(x_, model_weights[(*layer_id)++], model_weights[(*layer_id)++], model_weights[(*layer_id)++], model_weights[(*layer_id) + 1], model_weights[(*layer_id) + 2]); 
+    x_ = batchnorm2d(x_, model_weights[(*layer_id)++].address, model_weights[(*layer_id)++].address, model_weights[(*layer_id)++].address, model_weights[(*layer_id) + 1], model_weights[(*layer_id) + 2]); 
     *layer_id += 3; 
     Tensor x = AttentionCondenser(x_, in_channels, mid_channels_1, out_channels_1, layer_id); free_tensor(x_);
-    batchnorm2d(x, model_weights[(*layer_id)++], model_weights[(*layer_id)++], model_weights[(*layer_id)++], model_weights[(*layer_id)++]); 
+    x = batchnorm2d(x, model_weights[(*layer_id)++].address, model_weights[(*layer_id)++].address, model_weights[(*layer_id)++].address, model_weights[(*layer_id)++].address); 
     *layer_id += 3; 
 
     // BatchNorm layers overwrite the input in-place. 

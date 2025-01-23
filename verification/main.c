@@ -59,7 +59,7 @@ Tensor f_create_tensor(int8_t* shape, int8_t dims) {
 
     tensor.dims = dims; 
     tensor.data = NULL;
-    tensor.shape = (int8_t *)malloc(dims * sizeof(int8_t));
+    tensor.shape = (u_int8_t *)malloc(dims * sizeof(int8_t));
     if (!tensor.shape) {
         perror("Memory allocation failed for tensor.shape");
         exit(EXIT_FAILURE);
@@ -92,7 +92,7 @@ Tensor create_tensor(int8_t* shape, int8_t dims) {
 
     tensor.dims = dims; 
     tensor.f_data = NULL;
-    tensor.shape = (int8_t *)malloc(dims * sizeof(int8_t));
+    tensor.shape = (u_int8_t *)malloc(dims * sizeof(int8_t));
     if (!tensor.shape) {
         perror("Memory allocation failed for tensor.shape");
         exit(EXIT_FAILURE);
@@ -131,15 +131,15 @@ Tensor f_load_tensor(const char* filename, int8_t dims) {
     tensor.data = NULL;
 
     if (dims == 2) { 
-        tensor.shape = (int8_t *)malloc(2 * sizeof(int8_t));
+        tensor.shape = (u_int8_t *)malloc(2 * sizeof(int8_t));
         fread(tensor.shape, sizeof(int8_t), 2, file);
         tensor.size = tensor.shape[0] * tensor.shape[1];
     } else if (dims == 4) { 
-        tensor.shape = (int8_t *)malloc(4 * sizeof(int8_t));
+        tensor.shape = (u_int8_t *)malloc(4 * sizeof(int8_t));
         fread(tensor.shape, sizeof(int8_t), 4, file);
         tensor.size = tensor.shape[0] * tensor.shape[1] * tensor.shape[2] * tensor.shape[3];
     } else if (dims == 1) { 
-        tensor.shape = (int8_t *)malloc(1 * sizeof(int8_t));
+        tensor.shape = (u_int8_t *)malloc(1 * sizeof(int8_t));
         fread(tensor.shape, sizeof(int8_t), 1, file);
         tensor.size = *tensor.shape;
     } else { 
@@ -181,15 +181,15 @@ Tensor load_tensor(const char* filename, int8_t dims) {
     tensor.f_data = NULL;
 
     if (dims == 2) { 
-        tensor.shape = (int8_t *)malloc(2 * sizeof(int8_t));
+        tensor.shape = (u_int8_t *)malloc(2 * sizeof(int8_t));
         fread(tensor.shape, sizeof(int8_t), 2, file);
         tensor.size = tensor.shape[0] * tensor.shape[1];
     } else if (dims == 4) { 
-        tensor.shape = (int8_t *)malloc(4 * sizeof(int8_t));
+        tensor.shape = (u_int8_t *)malloc(4 * sizeof(int8_t));
         fread(tensor.shape, sizeof(int8_t), 4, file);
         tensor.size = tensor.shape[0] * tensor.shape[1] * tensor.shape[2] * tensor.shape[3];
     } else if (dims == 1) { 
-        tensor.shape = (int8_t *)malloc(1 * sizeof(int8_t));
+        tensor.shape = (u_int8_t *)malloc(1 * sizeof(int8_t));
         fread(tensor.shape, sizeof(int8_t), 1, file);
         tensor.size = *tensor.shape;
     } else { 

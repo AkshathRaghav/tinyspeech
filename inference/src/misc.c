@@ -14,7 +14,7 @@ int8_t clamp(int8_t val, int8_t min_val, int8_t max_val) {
     return val;
 }
 
-void quantize_weights(Tensor *w, Tensor *u, float* scale, uint8_t retain_float) {
+void quantize_weights(Tensor *w, Tensor *u, float* scale, u_int8_t retain_float) {
     for (int32_t i = 0; i < u->size; i++) {
         if (retain_float == 1) { 
             u->f_data[i] = clamp(roundf(w->f_data[i] / (*scale)), -127.0f, 127.0f);
@@ -24,38 +24,34 @@ void quantize_weights(Tensor *w, Tensor *u, float* scale, uint8_t retain_float) 
     }
 }
 
-void dequantize_weights(Tensor *quantized_weights, Tensor *dequantized_weights, float scale) {
-    for (int32_t i = 0; i < dequantize_weights.size; i++) {
-        dequantized_weights->f_data[i] = quantized_weights->[i] * scale;
+void dequantize_weights(Tensor* quantized_weights, Tensor* dequantized_weights, float scale) {
+    for (int32_t i = 0; i < dequantized_weights->size; i++) {
+        dequantized_weights->f_data[i] = quantized_weights->f_data[i] * scale;
     }
 }
 
 
-void sigmoid(Tensor *tensor) {
-    #ifdef QUANT_MODE_QAT_SQ
-        Tensor output = f_create_tensor(tensor->shape, 4); 
-    #endif 
+Tensor sigmoid(Tensor *tensor) {
+    Tensor output = f_create_tensor(tensor->shape, 4); 
 
     for (int i = 0; i < tensor->size; i++) {
         #ifdef QUANT_MODE_QAT_SQ
-            tensor->f_data[i] = 1.0f / (1.0f + expf(-tensor->f_data[i]));
+            output.f_data[i] = 1.0f / (1.0f + expf(-tensor->f_data[i]));
         #else 
-            output->f_data[i] = 1.0f / (1.0f + expf(-tensor->data[i]));
+            output.f_data[i] = 1.0f / (1.0f + expf(-tensor->data[i]));
         #endif
     }
 
-    #ifdef QUANT_MODE_QAT_SQ
-        free_tensor(tensor);
-        tensor = output; 
-    #endif 
+    free_tensor(tensor);
+    return output; 
 }
 
 void attention(Tensor *residual, Tensor *S, Tensor *scale) { 
     for (int i = 0; i < S->size; i++) {
         #ifdef QUANT_MODE_QAT_SQ
-            S->f_data[i] = residual->data[i] + (residual->f_data[i] * (*scale->f_data)[i] * S->f_data[i]);
+            S->f_data[i] = residual->data[i] + (residual->f_data[i] * scale->f_data[i] * S->f_data[i]);
         #else 
-            S->f_data[i] = residual->f_data[i] + (residual->f_data[i] * (*scale->f_data)[i] * S->f_data[i]);
+            S->f_data[i] = residual->f_data[i] + (residual->f_data[i] * scale->f_data[i] * S->f_data[i]);
         #endif 
     }
 }

@@ -9,13 +9,13 @@
 typedef struct {
     int dims;       // Number of Dimensions
     int size;      // Number of elements
-    int8_t *shape; // 2D or 4D 
+    u_int8_t *shape; // 2D or 4D 
     int8_t *data;  // Flattened data
     float *f_data;  // Flattened data for float
 } Tensor;
 
-Tensor f_create_tensor(int8_t* shape, int8_t dims);
-Tensor create_tensor(int8_t* shape, int8_t dims);
+Tensor f_create_tensor(u_int8_t* shape, int8_t dims);
+Tensor create_tensor(u_int8_t* shape, int8_t dims);
 Tensor f_load_tensor(const char* filename, int8_t dims);
 Tensor load_tensor(const char* filename, int8_t dims);
 void free_tensor(Tensor* tensor);

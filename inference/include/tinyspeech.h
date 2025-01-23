@@ -5,6 +5,6 @@
 #include "weights.h"
 #include "modules.h"
 
-Tensor TinySpeechZ(Tensor* input, uint8_t num_classes);
+Tensor TinySpeechZ(Tensor* input, u_int8_t num_classes);
 
 #endif

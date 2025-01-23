@@ -103,10 +103,54 @@ static const Tensor {tensor_name} = {{
                 extract_model_structure(header_lines, module, parent_name=full_name)
 
     extract_model_structure(header_lines, model)
+    
+    header_lines.append("""
+// Block 1
+#define B1_IN       7    // Input channels
+#define B1_MC_0     14   // Mid channels 0
+#define B1_OC_0     3    // Out channels 0
+#define B1_MC_1     6    // Mid channels 1
+#define B1_OC_1     7    // Out channels 1
+
+// Block 2
+#define B2_IN       7    // Input channels
+#define B2_MC_0     14   // Mid channels 0
+#define B2_OC_0     3    // Out channels 0
+#define B2_MC_1     6    // Mid channels 1
+#define B2_OC_1     7    // Out channels 1
+
+// Block 3
+#define B3_IN       7    // Input channels
+#define B3_MC_0     14   // Mid channels 0
+#define B3_OC_0     2    // Out channels 0
+#define B3_MC_1     4    // Mid channels 1
+#define B3_OC_1     7    // Out channels 1
+
+// Block 4
+#define B4_IN       7    // Input channels
+#define B4_MC_0     14   // Mid channels 0
+#define B4_OC_0     11   // Out channels 0
+#define B4_MC_1     22   // Mid channels 1
+#define B4_OC_1     7    // Out channels 1
+
+// Block 5
+#define B5_IN       7    // Input channels
+#define B5_MC_0     14   // Mid channels 0
+#define B5_OC_0     14   // Out channels 0
+#define B5_MC_1     28   // Mid channels 1
+#define B5_OC_1     7    // Out channels 1
+
+// Block 6
+#define B6_IN       7    // Input channels
+#define B6_MC_0     14   // Mid channels 0
+#define B6_OC_0     10   // Out channels 0
+#define B6_MC_1     20   // Mid channels 1
+#define B6_OC_1     7    // Out channels 1
+""")
 
     header_lines.append("""
 typedef struct {
-    const uint8_t id;
+    const u_int8_t id;
     int *address;
 } VariableMap;
 

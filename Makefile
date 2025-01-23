@@ -4,26 +4,30 @@ SHELL := /bin/bash
 
 
 CC = gcc
-CFLAGS = -lm -Wall -Iverification -Iinclude
-	
-	
+CFLAGS = -lm -Wall -I$(INFERENCE_DIR)/include -I$(VERIFICATION_DIR)/include
+
 # Paths
-VERIFICATION_DIR = /depot/euge/data/araviki/vsdsquadronmini/verification
+SOURCE_FOLDER = /depot/euge/data/araviki/vsdsquadronmini
+VERIFICATION_DIR = $(SOURCE_FOLDER)/verification
+INFERENCE_DIR = $(SOURCE_FOLDER)/inference
 SUBFOLDERS := $(wildcard $(VERIFICATION_DIR)/*)
 LAYER_NAMES := $(notdir $(SUBFOLDERS))
+
+SOURCES = $(INFERENCE_DIR)/source/misc.c \
+          $(INFERENCE_DIR)/source/modules.c \
+          $(INFERENCE_DIR)/source/tensor.c \
+          $(INFERENCE_DIR)/source/tinyspeech.c
+OBJECTS = $(SOURCES:.c=.o)
 
 # Targets
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-venv: . ./.venv/bin/activate.csh
-
-
-.PHONY: clean
-clean:
-	@$(foreach DIR, $(SUBFOLDERS), \
-		echo "Cleaning directory: $(DIR)"; \
-		rm -f $(DIR)/*.bin $(DIR)/*.txt $(DIR)/*.o $(DIR)/*.out $(DIR)/test;)
+build_engine:
+	@echo "Building inference engine..."
+	$(CC) $(CFLAGS) $(wildcard $(INFERENCE_DIR)/src/*.c) -o inference_engine
+	@echo "Running inference engine with Valgrind..."
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose ./inference_engine
 
 verify_all: 
 	@$(MAKE) venv
@@ -47,7 +51,17 @@ verify:
 	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --log-file=valgrind-out1.txt ./$(LAYER) && \
 	@cd ../..
 
+venv:
+	@echo "Setting up virtual environment..."
+	python3 -m venv ./.venv
+	. ./.venv/bin/activate
 
+.PHONY: clean
+clean:
+	@$(foreach DIR, $(SUBFOLDERS), \
+		echo "Cleaning directory: $(DIR)"; \
+		rm -f $(DIR)/*.bin $(DIR)/*.txt $(DIR)/*.o $(DIR)/*.out $(DIR)/test;)
+	@rm -f inference_engine
 
 .PHONY: lint
 lint:

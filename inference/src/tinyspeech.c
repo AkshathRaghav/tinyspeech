@@ -1,19 +1,23 @@
 #include "./tensor.h"
-#include "../drivers/driver.h"
+#include "./weights.h"
+#include "./modules.h"
+#include "./misc.h"
+
+// #include "../drivers/driver.h"
 
 Tensor TinySpeechZ(Tensor* input) { 
-    uint8_t layer_id = 0; 
+    u_int8_t layer_id = 0; 
 
-    Tensor x = relu(conv2d(&input, model_weights[layer_id++], model_weights[layer_id++], model_weights[layer_id++], 3, 1)); layer_id++; 
+    Tensor x = relu(conv2d(input, model_weights[layer_id++].address, model_weights[layer_id++].address, model_weights[layer_id++].address, 3, 1)); layer_id++; 
 
     x = Attn_BN_Block(&x, B1_IN, B1_MC_0, B1_OC_0, B1_MC_1, B1_OC_1, &layer_id); 
     x = Attn_BN_Block(&x, B2_IN, B2_MC_0, B2_OC_0, B2_MC_1, B2_OC_1, &layer_id); 
     x = Attn_BN_Block(&x, B3_IN, B3_MC_0, B3_OC_0, B3_MC_1, B3_OC_1, &layer_id); 
     x = Attn_BN_Block(&x, B4_IN, B4_MC_0, B4_OC_0, B4_MC_1, B4_OC_1, &layer_id); 
 
-    Tensor x = relu(conv2d(&x, model_weights[layer_id++], model_weights[layer_id++], model_weights[layer_id++], 3, 1)); layer_id++; 
+    Tensor x = relu(conv2d(&x, model_weights[layer_id++].address, model_weights[layer_id++].address, model_weights[layer_id++].address, 3, 1)); layer_id++; 
     Tensor pooled = adaptive_avg_pool2d(&x); free_tensor(&x);
-    x = fc_layer(&pooled, Tensor weights); free_tensor(pooled);
+    x = fc_layer(&pooled, model_weights[layer_id++].address); free_tensor(&pooled);
     softmax(&x);
     // TODO: Logic check the shape here 
 
@@ -26,17 +30,16 @@ Tensor TinySpeechZ(Tensor* input) {
 int main() { 
 
     #ifdef TEST_RUN
-        fprintf("Loading in TEST mode.\n");
-        uint8_t shape[4] = { 1, 1, 12, 94 };
+        fprintf(stdout, "Loading in TEST mode.\n");
 
         #ifdef QUANT_MODE_QAT_SQ
             Tensor input = f_load_tensor("../logs/ModelInput.bin", 4);
-        #else QUANT_MODE_DQ
+        #else 
             Tensor input = load_tensor("../logs/ModelInput.bin", 4);
         #endif
 
-        Tensor output = TinySpeechZ(input);
-        f_print_tensor(output);
+        Tensor output = TinySpeechZ(&input);
+        f_print_tensor(&output);
     #endif
 
     return 0;

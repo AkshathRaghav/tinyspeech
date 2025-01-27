@@ -9,7 +9,7 @@ Tensor softmax(Tensor *input) {
     int batch_size = input->shape[0];
     int num_classes = input->shape[1];
 
-    int8_t shape[2] = {batch_size, num_classes};
+    u_int8_t shape[2] = {batch_size, num_classes};
     Tensor output = f_create_tensor(shape, 2);
 
     for (int n = 0; n < batch_size; n++) {

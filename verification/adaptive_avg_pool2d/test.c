@@ -11,7 +11,7 @@ Tensor adaptive_avg_pool2d(Tensor *input) {
     int height = input->shape[2];
     int width = input->shape[3];
 
-    int8_t shape[4] = {batch_size, channels, 1, 1};
+    u_int8_t shape[4] = {batch_size, channels, 1, 1};
     Tensor output = f_create_tensor(shape, 4);
 
     for (int n = 0; n < batch_size; n++) {

@@ -5,7 +5,7 @@
 
 Tensor upsample_nearest(Tensor* input, int in_size, int8_t scale_factor) {
 
-    int8_t shape[4] = {input->shape[0], input->shape[1], input->shape[2] * scale_factor, input->shape[3] * scale_factor};
+    u_int8_t shape[4] = {input->shape[0], input->shape[1], input->shape[2] * scale_factor, input->shape[3] * scale_factor};
     Tensor output = create_tensor(shape, 4); 
 
     if (!output.data) {

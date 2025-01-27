@@ -23,6 +23,8 @@ OBJECTS = $(SOURCES:.c=.o)
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
+.DEFAULT_GOAL := build_engine
+
 build_engine:
 	@echo "Building inference engine..."
 	$(CC) $(CFLAGS) $(wildcard $(INFERENCE_DIR)/src/*.c) -o inference_engine

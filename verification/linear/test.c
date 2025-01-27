@@ -12,7 +12,7 @@ Tensor fc_layer(Tensor *input, Tensor *weights) {
     int8_t input_features = input->shape[1];
     int8_t output_features = weights->shape[0];
 
-    int8_t shape[2] = {batch_size, output_features};
+    u_int8_t shape[2] = {batch_size, output_features};
     Tensor output = f_create_tensor(shape, 2);
 
     for (u_int8_t n = 0; n < batch_size; n++) {

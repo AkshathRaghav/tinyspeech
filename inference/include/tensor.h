@@ -25,7 +25,7 @@ void save_tensor(const char* filename, Tensor* tensor);
 void confirm_equal(Tensor* output, Tensor* expected_output);
 void f_print_tensor(Tensor *tensor);
 void print_tensor(Tensor *tensor);
-void print_tensor_recursive(int8_t *data, int8_t *shape, int dims, int current_dim, int indent_level);
-void f_print_tensor_recursive(float *data, int8_t *shape, int dims, int current_dim, int indent_level);
+void print_tensor_recursive(int8_t *data, u_int8_t *shape, int dims, int current_dim, int indent_level);
+void f_print_tensor_recursive(float *data, u_int8_t *shape, int dims, int current_dim, int indent_level);
 
 #endif

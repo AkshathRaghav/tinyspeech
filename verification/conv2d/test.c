@@ -27,7 +27,7 @@ Tensor conv2d(Tensor *input, Tensor *weights, Tensor *bias, int stride, int padd
     int out_height = (in_height + 2 * padding - kernel_height) / stride + 1;
     int out_width = (in_width + 2 * padding - kernel_width) / stride + 1;
 
-    int8_t shape[4] = {batch_size, out_channels, out_height, out_width};
+    u_int8_t shape[4] = {batch_size, out_channels, out_height, out_width};
     Tensor output = create_tensor(shape, 4);
 
     for (int n = 0; n < batch_size; n++) {

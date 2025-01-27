@@ -1,4 +1,5 @@
 #include "tensor.h"
+#include "misc.h"
 
 void print_tensor_upto_n(Tensor* input, int len) { 
     for (int i = 0; i < len; i++) { 
@@ -7,13 +8,7 @@ void print_tensor_upto_n(Tensor* input, int len) {
     printf("\n");
 }
 
-float mean(int8_t *arr, int size) {
-    float sum = 0.0f;
-    for (int i = 0; i < size; i++) {
-        sum += arr[i];
-    }
-    return sum / size;
-}
+
 
 void confirm_equal(Tensor* output, Tensor* expected_output) { 
     // printf("%d, %d\n", output->size, expected_output->size);
@@ -252,12 +247,13 @@ void free_tensor(Tensor* tensor) {
         free(tensor->data);
     }
     if (tensor->shape) free(tensor->shape);
-    tensor->shape = tensor->data = NULL;
+    tensor->shape = NULL;
+    tensor->data = NULL; 
     tensor->f_data = NULL;
 }
 
 
-void f_print_tensor_recursive(float *data, int8_t *shape, int dims, int current_dim, int indent_level) {
+void f_print_tensor_recursive(float *data, u_int8_t *shape, int dims, int current_dim, int indent_level) {
     // Print the opening bracket for the current dimension
     for (int i = 0; i < indent_level; i++) {
         printf(" ");
@@ -294,7 +290,7 @@ void f_print_tensor_recursive(float *data, int8_t *shape, int dims, int current_
     }
 }
 
-void print_tensor_recursive(int8_t *data, int8_t *shape, int dims, int current_dim, int indent_level) {
+void print_tensor_recursive(int8_t *data, u_int8_t *shape, int dims, int current_dim, int indent_level) {
     // Print the opening bracket for the current dimension
     for (int i = 0; i < indent_level; i++) {
         printf(" ");

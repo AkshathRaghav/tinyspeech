@@ -4,7 +4,7 @@
 #include "../main.c"
 
 Tensor maxpool2d(Tensor* input, int kernel_size, int stride) {
-    int8_t shape[4] =  {input->shape[0], input->shape[1], ((input->shape[2] - kernel_size) / stride + 1), ((input->shape[3] - kernel_size) / stride + 1)};
+    u_int8_t shape[4] =  {input->shape[0], input->shape[1], ((input->shape[2] - kernel_size) / stride + 1), ((input->shape[3] - kernel_size) / stride + 1)};
     Tensor output = create_tensor(shape, 4);
 
     for (int b = 0; b < output.shape[0]; b++) { // Batch 

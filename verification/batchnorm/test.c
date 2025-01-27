@@ -12,7 +12,7 @@ Tensor batchnorm2d(Tensor* input, Tensor* mean, Tensor* variance, Tensor* gamma,
     int8_t H = input->shape[2];
     int8_t W = input->shape[3];
 
-    int8_t shape[4] = {N, C, H, W};
+    u_int8_t shape[4] = {N, C, H, W};
     Tensor output = create_tensor(shape, 4);
 
     for (int n = 0; n < N; n++) {

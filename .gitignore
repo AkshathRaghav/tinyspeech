@@ -11,3 +11,7 @@ training/__pycache__/
 */*.bin
 */*.txt
 */*.csv
+
+*/inference_engine
+*/engine
+*/__pycache__/*

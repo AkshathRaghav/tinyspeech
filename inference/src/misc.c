@@ -1,4 +1,5 @@
 #include "misc.h"
+#include "weights.h"
 
 float compute_mean_abs(int32_t *w, int32_t len) {
     int sum = 0.0f;

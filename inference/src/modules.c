@@ -133,11 +133,13 @@ Tensor conv2d(Tensor *input, Tensor *weights, Tensor *bias, Tensor *scale, u_int
     
     #ifdef QUANT_MODE_DQ
         dequantize_weights(&float_intermediate, &float_intermediate, &(scale->f_data));
-    #elif defined(QUANT_MODE_QAT_SQ)
-        quantize_weights(&float_intermediate, &float_intermediate, scale->f_data, CONVERT_INT8);
+        return float_intermediate;
+    #else
+        Tensor int_intermediate = create_tensor(output_shape, 4);
+        quantize_weights(&float_intermediate, &int_intermediate, scale->f_data, CONVERT_INT8);
+        free_tensor(&float_intermediate);
+        return int_intermediate;
     #endif 
-
-    return float_intermediate;
 }   
 
 Tensor fc_layer(Tensor *input, Tensor *weights) {
@@ -303,16 +305,20 @@ Tensor upsample_nearest(Tensor* input, int8_t scale_factor) {
 Tensor AttentionCondenser(Tensor* input, int8_t in_channels, int8_t mid_channels, int8_t out_channels, u_int8_t* layer_id) { 
 
     Tensor Q = maxpool2d(input, 2, 2);
+    fprintf(stdout, "AttnCondBlock.AttnCond.Conv2d.1: %d\n", (*layer_id));
     Tensor K = conv2d(&Q, model_weights[(*layer_id)].address, model_weights[(*layer_id) + 1].address, model_weights[(*layer_id) + 2].address, 1, 1); 
     *layer_id += 3; 
     (*layer_id)++; // Skip calibrated weight-scale
+    fprintf(stdout, "AttnCondBlock.AttnCond.Conv2d.2: %d\n", (*layer_id));
     K = conv2d(&K, model_weights[(*layer_id)].address, model_weights[(*layer_id) + 1].address, model_weights[(*layer_id) + 2].address, 1, 1);
     *layer_id += 3;
     K = upsample_nearest(&K, 2); // K = A here
+    fprintf(stdout, "AttnCondBlock.AttnCond.Conv2d.3: %d\n", (*layer_id));
     K = conv2d(&K, model_weights[(*layer_id)].address, model_weights[(*layer_id) + 1].address, model_weights[(*layer_id) + 2].address, 1, 1);
     *layer_id += 3; 
     (*layer_id)++; // Skip calibrated weight-scale
     K = sigmoid(&K);
+    fprintf(stdout, "AttnCondBlock.AttnCond.Attn: %d\n", (*layer_id));
     attention(input, &K, model_weights[(*layer_id)].address); 
 
     return K; // S = V_prime
@@ -326,9 +332,11 @@ Tensor AttentionCondenser(Tensor* input, int8_t in_channels, int8_t mid_channels
 Tensor Attn_BN_Block(Tensor* input, int8_t in_channels, int8_t mid_channels_0, int8_t out_channels_0, int8_t mid_channels_1, int8_t out_channels_1, u_int8_t* layer_id)  { 
 
     Tensor x_ = AttentionCondenser(input, in_channels, mid_channels_0, out_channels_0, layer_id); free_tensor(input); (*layer_id)++;
+    fprintf(stdout, "AttnCondBlock.BatchNorm.1: %d\n", (*layer_id));
     x_ = batchnorm2d(&x_, model_weights[(*layer_id)].address, model_weights[(*layer_id) + 1].address, model_weights[(*layer_id) + 3].address, model_weights[(*layer_id) + 4].address, model_weights[(*layer_id) + 5].address); 
     *layer_id += 6; 
     Tensor x = AttentionCondenser(&x_, in_channels, mid_channels_1, out_channels_1, layer_id); free_tensor(&x_); (*layer_id)++;
+    fprintf(stdout, "AttnCondBlock.BatchNorm.2: %d\n", (*layer_id));
     x = batchnorm2d(&x_, model_weights[(*layer_id)].address, model_weights[(*layer_id) + 1].address, model_weights[(*layer_id) + 3].address, model_weights[(*layer_id) + 4].address, model_weights[(*layer_id) + 5].address); 
     *layer_id += 6; 
 

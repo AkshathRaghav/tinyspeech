@@ -4,7 +4,7 @@ SHELL := /bin/bash
 
 
 CC = gcc
-CFLAGS = -lm -Wall -I$(INFERENCE_DIR)/include -I$(VERIFICATION_DIR)/include
+CFLAGS = -g -lm -Wall -I$(INFERENCE_DIR)/include -I$(VERIFICATION_DIR)/include
 
 # Paths
 SOURCE_FOLDER = /depot/euge/data/araviki/vsdsquadronmini
@@ -23,13 +23,25 @@ OBJECTS = $(SOURCES:.c=.o)
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-.DEFAULT_GOAL := build_engine
+.DEFAULT_GOAL := debug 
+
+debug: build_engine infer
 
 build_engine:
 	@echo "Building inference engine..."
 	$(CC) $(CFLAGS) $(wildcard $(INFERENCE_DIR)/src/*.c) -o inference_engine
+	@echo "Completed at ./inference_engine!"
+
+# Make split terminals
+# "make infer" on one 
+# "gdb ./inference_engine" then "target remote | vgdb --pid=" iwthin gdb 
+# gdb "detach, quit" will work, but valgrind won't stop
+# ps aux | grep valgrind | kill -9 on the valgrind terminal to stop running valgrind processes 
+
+## Ugly, please find a fix ^^ 
+infer:
 	@echo "Running inference engine with Valgrind..."
-	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose ./inference_engine
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --vgdb=yes --vgdb-error=0 ./inference_engine
 
 verify_all: 
 	@$(MAKE) venv

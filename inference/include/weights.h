@@ -4,11 +4,12 @@
 // Quantization Type: 8bit
 // Quantization Mode: QAT
 
-#include <stdint.h>
-#include "tensor.h"
-
 #ifndef TINYSPEECH_WEIGHTS_H
 #define TINYSPEECH_WEIGHTS_H
+
+#include "tensor.h"
+#include <stdint.h>
+
 
 // Constants:
 #define QUANT_MODE_QAT_SQ
@@ -1696,7 +1697,7 @@ typedef struct {
 #define B6_OC_1     7    // Out channels 1
 
 
-VariableMap model_weights[] = {
+static VariableMap model_weights[] = {
     { 0, &CONV1_WEIGHT },
     { 1, &CONV1_BIAS },
     { 2, &CONV1_ACTIVATION_SCALE },

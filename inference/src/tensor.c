@@ -300,7 +300,7 @@ void print_tensor_recursive(int8_t *data, u_int8_t *shape, int dims, int current
     if (current_dim == dims - 1) {
         // Base case: Print the values in the innermost dimension
         for (int i = 0; i < shape[current_dim]; i++) {
-            printf("%d", data[i]);
+            printf("%d\n", data[i]);
             if (i < shape[current_dim] - 1) {
                 printf(", ");
             }

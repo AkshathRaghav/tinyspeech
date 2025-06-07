@@ -2,7 +2,7 @@
 
 # 🗣️🔥 QP-TinySpeech
 
-*Low-Bit <ins>Quantized + Pruned</ins> TinySpeech-Z for low-power MCUs*
+*Low-Bit <ins>Quantized</ins> TinySpeech-Z for low-power MCUs*
 
 </div>
 
